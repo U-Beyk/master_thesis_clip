@@ -1,0 +1,34 @@
+# Correpsonds to the list of organisms with their files in the data/datasets folder.
+# The data should be in following ordner: data/datasets/{organism}, e.g. data/datasets/arabidopsis_thaliana
+organisms:
+  Arabidopsis thaliana: arabidopsis_thaliana
+  Caenorhabditis elegans: caenorhabditis_elegans
+  Danio rerio: danio_rerio
+  Drosophila melanogaster: drosophila_melanogaster
+  Homo sapiens: homo_sapiens
+  Mus musculus: mus_musculus
+  Saccharomyces cerevisiae: saccharomyces_cerevisiae
+
+
+# The included features in the GFF3 files that the CLIP data is mapped to.
+# Genes, Exons, CDS and other features are excluded.
+included_features:
+  -mRNA
+  -lnc_RNA
+  -snoRNA
+  -snRNA
+  -tRNA
+  -rRNA
+  -miRNA
+  -piRNA
+  -ncRNA
+  -scRNA
+  -processed_transcript
+  -pseudogenic_transcript
+  -pre_miRNA
+  -miRNA primary transcript
+
+# Assigns the number of CPU workers to the pipeline.
+# If the tool uses up too much RAM, this can be lowered.
+# In general at least 30 GB free RAM is recommended for 2 - 3 workers.
+number_of_workers_per_organism: 2

@@ -1,0 +1,2 @@
+class SequenceExtractionError(Exception):
+    pass
