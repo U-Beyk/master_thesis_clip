@@ -2,6 +2,8 @@
 
 **THIS IS A WORK IN PROGRESS!**
 
+**The aim of this thesis is to examine RNA structures of RNA binding protein binding sites and their RNA 3D motifs.**
+
 The datasets used in this master's thesis were downloaded on July 22, 2025.
 We downloaded the CLIP data from the POSTAR3 database by requesting a bulk download:
 http://postar.ncrnalab.org
@@ -46,7 +48,7 @@ homo_sapiens_genome, homo_sapiens_annotations and homo_sapiens_clip.
 
 A config.yaml file was created to include these organisms and other importatn settings.
 
-Before running the project, the required packages should be installed via the requirements.txt with following command:
+Before running the project, the required packages should be installed via the requirements.txt with following command:  
 **pip install -r requirements.txt**
 
 The analysis can be run with: **python3 main.py**
@@ -55,7 +57,7 @@ The tool can use up a lot of RAM, so having at around ~30GB free RAM is recommen
 otherwise the number of workers in the config.yaml can be decreased. 
 If the amount of free RAM is much higher the number can also be increased.
 
-To be on the safe site, use following command when running the analysis:
-**systemd-run --scope -p MemoryMax=28G --user python3 main.py**
+To be on the safe site, use following command when running the analysis:  
+**systemd-run --scope -p MemoryMax=28G --user python3 main.py**  
 With this command, it is possible to specify a max memory usage. If that number is exceeded,
 the program will be terminated.
