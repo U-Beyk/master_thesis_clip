@@ -39,8 +39,9 @@ class TranscriptAnnotation:
         The feature type of the sequence.
     transcript_attributes: dict[str, str]
         The attributes of the annotation.
-    clip_data: list[ClipEntry]
-        List of all CLIP entries that overlap with the transcript position.
+    clip_data : list[ClipEntry]
+        Unique CLIP entries that overlap with the transcript position.
+        Internally stored as a set to enforce uniqueness.
     sequence: str
         DNA sequence of the transcript.
     """
@@ -50,8 +51,22 @@ class TranscriptAnnotation:
     strand_orientation: str
     feature_type: str
     transcript_attributes: dict[str, str]
-    clip_data: list[ClipEntry] = field(default_factory=list)
+    _clip_data: set[ClipEntry] = field(default_factory=set, init=False, repr=False)
     sequence: str = ""
+
+    @property
+    def clip_data(self) -> list[ClipEntry]:
+        """
+        Unique CLIP entries that overlap with the transcript position.
+        Returned as a list for compatibility, but internally stored as a set
+        to ensure uniqueness.
+
+        Returns
+        -------
+        list[ClipEntry]
+            The set of CLIP entries as a list.
+        """
+        return list(self._clip_data)
 
     def to_dict(self) -> dict[str, str | int| dict | list]:
         """
@@ -73,16 +88,16 @@ class TranscriptAnnotation:
             "clip data": [clip.to_dict() for clip in self.clip_data]
         }
     
-    def append_clip(self, clip: ClipEntry) -> None:
+    def add_clip(self, clip: ClipEntry) -> None:
         """
-        Appends the CLIP entry to the list of CLIP data.
+        Adds a CLIP entry to the set of CLIP data.
 
         Parameters
         ----------
         clip: ClipEntry
-            CLIP entry to append to the clip_data list.
+            CLIP entry to add to the clip_data set.
         """
-        self.clip_data.append(clip)
+        self._clip_data.add(clip)
 
 class TranscriptAnnotationParser:
     """

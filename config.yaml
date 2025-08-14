@@ -30,5 +30,5 @@ included_features:
 
 # Assigns the number of CPU workers to the pipeline.
 # If the tool uses up too much RAM, this can be lowered.
-# In general at least 30 GB free RAM is recommended for 2 - 3 workers.
-number_of_workers_per_organism: 2
+# In general at least 28 GB free RAM is recommended for ~10 workers.
+number_of_workers_per_organism: 10

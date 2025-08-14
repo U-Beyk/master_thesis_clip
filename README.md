@@ -10,32 +10,32 @@ http://postar.ncrnalab.org
 
 The different genome and gene annotation files were downloaded from Ensembl.
 
-For Homo sapiens (human; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/homo_sapiens/dna/
+For Homo sapiens (human; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/homo_sapiens/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/homo_sapiens/
 
-For Mus musculus (mouse; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/mus_musculus/dna/
+For Mus musculus (mouse; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/mus_musculus/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/mus_musculus/
 
-For Danio rerio (zebrafish; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/danio_rerio/dna/
+For Danio rerio (zebrafish; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/danio_rerio/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/danio_rerio/
 
-For Drosophila Melanogaster (fly; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/drosophila_melanogaster/dna/
+For Drosophila Melanogaster (fly; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/drosophila_melanogaster/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/drosophila_melanogaster/
 
-For Caenorhabditis elegans (worm; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/caenorhabditis_elegans/dna/
+For Caenorhabditis elegans (worm; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/caenorhabditis_elegans/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/caenorhabditis_elegans/
 
-For Saccharomyces cerevisiae (yeast; release: 114):
-Genome: https://ftp.ensembl.org/pub/release-114/fasta/saccharomyces_cerevisiae/dna/
+For Saccharomyces cerevisiae (yeast; release: 114):  
+Genome: https://ftp.ensembl.org/pub/release-114/fasta/saccharomyces_cerevisiae/dna/  
 Gene annotations: https://ftp.ensembl.org/pub/release-114/gff3/saccharomyces_cerevisiae/
 
-For Arabidopsis thaliana (release: 61):
-Genome: https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/fasta/arabidopsis_thaliana/dna/
+For Arabidopsis thaliana (release: 61):  
+Genome: https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/fasta/arabidopsis_thaliana/dna/  
 Gene annotations: https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-61/gff3/arabidopsis_thaliana/
 
 The genome files containing all the DNA data for each organism were downloaded and unpacked, with file types left unchanged after extraction. 
@@ -51,9 +51,10 @@ A config.yaml file was created to include these organisms and other importatn se
 Before running the project, the required packages should be installed via the requirements.txt with following command:  
 **pip install -r requirements.txt**
 
-The analysis can be run with: **python3 main.py**
+The analysis can be run with:  
+**python3 main.py**
 
-The tool can use up a lot of RAM, so having at around ~30GB free RAM is recommended,
+The tool can use up a lot of RAM, so having at around ~28GB free RAM is recommended,
 otherwise the number of workers in the config.yaml can be decreased. 
 If the amount of free RAM is much higher the number can also be increased.
 

@@ -18,7 +18,7 @@ author: U.B.
 from dataclasses import dataclass
 from processing.utils import normalize_chr
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class ClipEntry:
     """
     ClipEntry class representing the blueprint for clip data entries.
@@ -34,7 +34,9 @@ class ClipEntry:
     rbp_name: str
         Name of the RNA binding protein.
     methods: str
-        Experiment method and peak calling software.
+        Experiment method.
+    software: str
+        Peak calling software.
     sample: str
         Sample/tisue used in study.
     accession_data: str
@@ -46,7 +48,8 @@ class ClipEntry:
     end: int
     strand_orientation: str
     rbp_name: str
-    methods: str
+    method: str
+    software: str
     sample: str
     accession_data: str
     confidence_score: float
@@ -65,7 +68,8 @@ class ClipEntry:
             "end": self.end,
             "strand orientation": self.strand_orientation,
             "RNA binding protein": self.rbp_name,
-            "method": self.methods,
+            "method": self.method,
+            "software": self.software,
             "sample/tissue": self.sample,
             "accession of raw data": self.accession_data,
             "confidence score": self.confidence_score
@@ -130,12 +134,18 @@ class ClipParser:
         ClipEntry
             ClipEntry object of the line corresponding to an entry.
         """
+        # The column with the method and software sometimes only contain one entry. 
+        # In those cases the method and software attributes are set the same.
+        method_software = entry[6].split(",")
+        method, software = (method_software if len(method_software) == 2 
+                            else (method_software[0], method_software[0]))
         return ClipEntry(
             start=int(entry[1]),
             end=int(entry[2]),
             strand_orientation=entry[4],
             rbp_name=entry[5],
-            methods=entry[6],
+            method=method,
+            software=software,
             sample=entry[7],
             accession_data=entry[8],
             confidence_score=float(entry[9])

@@ -84,7 +84,7 @@ class TranscriptProcessor:
             overlapping = tree.overlap(clip.start, clip.end)
             for iv in overlapping:
                 transcript_id = iv.data
-                transcripts[transcript_id].append_clip(clip)
+                transcripts[transcript_id].add_clip(clip)
         return transcripts
     
     def _set_sequence_of_transcripts(self, transcripts: dict[str, TranscriptAnnotation]) -> None:
@@ -108,6 +108,28 @@ class TranscriptProcessor:
             )
             transcript.sequence = transcript_sequence
 
+    def _output_transcripts_file(self, chromosome: str, transcripts: dict[str, TranscriptAnnotation]) -> None:
+        """
+        Outputs the transcripts with CLIP data and their sequences of a specified chromosome as a .json file.
+
+        Parameters
+        ----------
+        chromosome: str
+            Chromosome the transcripts and data is from.
+        transcripts: dict[str, TranscriptAnnotation]
+            Dictionary containing the transcript ID and the tarnscript annotation.
+        """
+        os.makedirs(self.output_folder, exist_ok=True)
+        output_path = os.path.join(self.output_folder, f"{chromosome}_transcripts_with_clip.json")
+        with open(output_path, "wb") as file:
+            file.write(b"{")
+            for transcript_number, (transcript_id, transcript) in enumerate(transcripts.items()):
+                if transcript_number > 0:
+                    file.write(b",")
+                transcript_json = orjson.dumps({transcript_id: transcript.to_dict()})
+                file.write(transcript_json[1:-1])
+            file.write(b"}")
+
     def process_chromosome(self, chromosome: str) -> tuple[str, int]:
         """
         Maps and processes all CLIP data and sequences to their corresponding transcripts of a specified chromosome.
@@ -126,18 +148,11 @@ class TranscriptProcessor:
             int: Number of transcripts.
         """
         transcripts = self._map_clip_to_transcripts(chromosome)
+        transcripts = {transcript_id: transcript for transcript_id, transcript in transcripts.items() if transcript.clip_data}
         self._set_sequence_of_transcripts(transcripts)
-        filtered = {
-            transcript_id: transcript.to_dict()
-            for transcript_id, transcript in transcripts.items() 
-            if transcript.clip_data and transcript.sequence
-            }
-        os.makedirs(self.output_folder, exist_ok=True)
-        out_path = os.path.join(self.output_folder, f"{chromosome}_transcripts_with_clip.json")
-        with open(out_path, "wb") as out_file:
-            out_file.write(orjson.dumps(filtered))
-        return chromosome, len(filtered)
-
+        transcripts = {transcript_id: transcript for transcript_id, transcript in transcripts.items() if transcript.sequence}
+        self._output_transcripts_file(chromosome, transcripts)
+        return chromosome, len(transcripts)
 
 class PipelineRunner:
     """

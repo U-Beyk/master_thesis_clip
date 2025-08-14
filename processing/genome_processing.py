@@ -99,7 +99,7 @@ class Genome:
 
     def extract_sequence(self, chromosome: str, start: int, end: int, strand_orientation: str) -> str:
         """
-        Get strand-aware genomic sequence.
+        Get strand-aware genomic sequence, without ambiguous nucleotides.
 
         Parameters
         ----------
@@ -121,4 +121,6 @@ class Genome:
         if not actual_chrom:
             return ""
         sequence = self._get_raw_sequence(actual_chrom, start, end)
+        if any(nucleotide not in set("ACGTacgt") for nucleotide in sequence):
+            return ""
         return self._reverse_complement(sequence) if strand_orientation == "-" else sequence
