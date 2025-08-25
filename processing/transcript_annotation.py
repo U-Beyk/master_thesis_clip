@@ -244,24 +244,6 @@ class TranscriptAnnotationParser:
         return transcripts, tree
 
     @staticmethod
-    def _is_valid_chromosome(chromosome: str) -> bool:
-        """
-        Check if chromosome name is shorter than six characters.
-        
-        Parameters
-        ----------
-        chromosome: str
-            The chromosome to validate.
-
-        Returns
-        -------
-        bool
-            True if the chromosome has a length shorter than six characters.
-            False if the chromosome is longer than five characters.
-        """
-        return len(chromosome) <= 6
-
-    @staticmethod
     def _parse_chromosome(line: str) -> str | None:
         """
         Extract and normalize chromosome name from a GFF3 line,
@@ -296,6 +278,6 @@ class TranscriptAnnotationParser:
         with open(self.gff3_file) as file:
             for line in file:
                 chromosome = self._parse_chromosome(line)
-                if chromosome and self._is_valid_chromosome(chromosome):
+                if chromosome and len(chromosome) <= 6:
                     chromosomes.add(chromosome)
         return list(chromosomes)

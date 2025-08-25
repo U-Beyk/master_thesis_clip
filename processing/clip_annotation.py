@@ -136,6 +136,7 @@ class ClipParser:
         """
         # The column with the method and software sometimes only contain one entry. 
         # In those cases the method and software attributes are set the same.
+        # TO-DO: Examine CLIP data and change this.
         method_software = entry[6].split(",")
         method, software = (method_software if len(method_software) == 2 
                             else (method_software[0], method_software[0]))

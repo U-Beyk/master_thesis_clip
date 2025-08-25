@@ -1,5 +1,6 @@
 __pycache__/
 RNAmotiFold/
 data/
+plots/
 .venv
 test.py

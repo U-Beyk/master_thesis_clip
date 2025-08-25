@@ -15,12 +15,18 @@ author: U.B.
 """
 
 from processing.data_mapper import SpeciesProcessor
+from pre_processing_analysis.clip_analysis import ClipSpeciesAnalyzer
 
 def main():
     """
     Main function processing, predicting and analyzing the data. 
     """
-    process_species()
+    #process_species()
+    analyse_clip_data()
+
+def analyse_clip_data() -> None:
+    analyzer = ClipSpeciesAnalyzer("config.yaml")
+    analyzer.analyse_all_organisms()
 
 def process_species() -> None:
     """
