@@ -18,7 +18,6 @@ author: U.B.
 """
 
 import matplotlib.pyplot as plt
-import numpy as np
 import yaml
 import os
 from dataclasses import dataclass
@@ -95,12 +94,18 @@ class ClipDataAnalyzer:
     ----------
     organism: str
         Organism the CLIP data stems from.
+    sowafter_tools: dict[str, bool]
+        Dictionary of software tools.
+        True means that a higher score
+        corresponds to a higher confidence.
+        False means that a lower score
+        corresponds to a higher confidence.
     clip_data: list[FullClipEntry]
         List of CLIP data.
     """
 
-    __slots__ = ("organism", "clip_data")
-    def __init__(self, organism: str):
+    __slots__ = ("organism", "clip_data", "software_tools")
+    def __init__(self, organism: str, software_tools: dict[str, bool]):
         """
         Initializes a ClipDataAnalyzer instance.
 
@@ -108,8 +113,11 @@ class ClipDataAnalyzer:
         ----------
         organism: str
             Organism the CLIP data to extract from.
+        software_tools: dict[str, bool]
+            Dictionary of software tools to include in the analysis.
         """
         self.organism = organism
+        self.software_tools = software_tools
         self.clip_data = self._extract_clip_data(organism)
 
     @property
@@ -187,6 +195,21 @@ class ClipDataAnalyzer:
             accession_data.add(data.accession_data)
         return accession_data
     
+    @property
+    def unique_accession_experiments(self) -> set[str]:
+        """
+        Gets and returns all unique accession experiments.
+
+        Returns
+        -------
+        set[str]
+            Set of unique accession experiments.
+        """
+        accession_experiments = set()
+        for data in self.clip_data:
+            accession_experiments.add(data.accession_experiment)
+        return accession_experiments
+    
     def save_histogram(self, data: list[float], file_name: str) -> None:
         """
         Creates and stores a histogram for a specific list of data.
@@ -251,7 +274,70 @@ class ClipDataAnalyzer:
             clip_data = [clip for clip in self.clip_data if clip.rbp_name.upper() == rbp]
             tool_counts = Counter(clip.software for clip in clip_data)
             rbps_tools_dict[rbp] = dict(tool_counts)
-        return rbps_tools_dict               
+        return rbps_tools_dict
+
+    def filter_upper_decile_score(self) -> list[FullClipEntry]:
+        """
+        Filters the data with confidence scores in the top 10% for each experiment and software tool.
+
+        Returns
+        -------
+        list[FullClipEntry]
+            List of the filtered CLIP data.
+        """
+        filtered_clip_data = []
+        for experiment in self.unique_accession_experiments:
+            experiment_data = self._extract_upper_decile_scores_tool(experiment)
+            filtered_clip_data.extend(experiment_data)
+        return filtered_clip_data
+
+    def _extract_upper_decile_scores_tool(self, experiment: str) -> list[FullClipEntry]:
+        """
+        Extracts the data with confidence scores in the top 10% of the specified experiment for all software tools.
+
+        Parameters
+        ----------
+        experiment: str
+            String of the experiment from the accession data.
+
+        Returns
+        -------
+        list[FullClipEntry]
+            List of the filtered data for the experiment.
+        """
+        filtered_data = []
+        experiment_data: list[FullClipEntry] = [data for data in self.clip_data if data.accession_experiment == experiment]
+        unique_software_tools = {data.software for data in experiment_data}
+        for software_tool in unique_software_tools:
+            filtered_data.extend(self._get_tool_specific_data(software_tool, experiment_data))
+        return filtered_data
+    
+    def _get_tool_specific_data(self, software_tool: str, experiment_data: list[FullClipEntry]) -> list[FullClipEntry]:
+        """
+        Gets the data with confidence scores in the top 10% for the specified software tool.
+
+        Parameters
+        ----------
+        software_tool: str
+            Name of the software tool.
+        experiment_data: list[FullClipEntry]
+            List of the unfiltered experiment data.
+
+        Returns
+        -------
+        list[FullClipEntry]
+            Filtered data of the software tool.
+        """
+        tool_specific_data = [data for data in experiment_data if data.software == software_tool]
+        tool_specific_data = sorted(tool_specific_data, key=lambda x: x.confidence_score, reverse=True)
+        decile = int(len(tool_specific_data) * 0.1) -1
+        if self.software_tools.get(software_tool):
+            cutoff = tool_specific_data[decile].confidence_score
+            decile_data = [data for data in tool_specific_data if data.confidence_score >= cutoff]
+        else:
+            cutoff = tool_specific_data[-decile].confidence_score
+            decile_data = [data for data in tool_specific_data if data.confidence_score >= cutoff]
+        return decile_data
                 
     def _extract_clip_data(self, organism: str) -> list[FullClipEntry]:
         """
@@ -319,6 +405,8 @@ class ClipSpeciesAnalyzer:
     ----------
     species: dict[str, str]
         Dictionary containing the species names.
+    software_tools: dict[str, bool]
+        Dictionary of software tools.
     """
 
     def __init__(self, config_file: str):
@@ -333,20 +421,25 @@ class ClipSpeciesAnalyzer:
         with open(config_file, 'r') as file:
             config = yaml.safe_load(file)
             self.species: dict[str, str] = config["organisms"]
+            self.software_tools: dict[str, bool] = config["included_software_tools"]
 
     def analyse_all_organisms(self) -> None:
         """
         Analyzes all organisms and prints the values, which are of interest.
         """
+        # Use this method to analyze specific properties of the datasets.
         for species_name, species in self.species.items():
             print(f"Analyzing {species_name}:")
-            data_analyzer = ClipDataAnalyzer(species)
+            data_analyzer = ClipDataAnalyzer(species, self.software_tools)
             print(
                 f"Unique chromosomes: {data_analyzer.unique_chromosomes}",
                 f"Unique methods: {data_analyzer.unique_methods}",
                 f"Unique software tools: {data_analyzer.unique_software_tools}",
-                f"Unique RBPs: {data_analyzer.unique_rbp}",
+                #f"Unique RBPs: {data_analyzer.unique_rbp}",
+                f"Number of unique accession experiments/samples: {len(data_analyzer.unique_accession_experiments)}",
+                f"Number of entries: {len(data_analyzer.clip_data)}",
+                f"Number of filtered: {len(data_analyzer.filter_upper_decile_score())}",
                 sep="\n", end="\n\n"
                 )
-            print(data_analyzer.entries_of_software_for_rbp(), "\n")
+            #print(data_analyzer.entries_of_software_for_rbp(), "\n")
             #data_analyzer.all_data_histogram()

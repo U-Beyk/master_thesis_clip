@@ -28,6 +28,20 @@ included_features:
   -pre_miRNA
   -miRNA primary transcript
 
+# All the included software tools for the scoring of the data.
+# True means that a higher value corresponds to a higher confidence.
+# False means that a lower value corresponds to a lower confidence.
+included_software_tools:
+  eCLIP: true
+  PARalyzer: true
+  PureCLIP: true
+  CTK: true
+  CIMS: true
+  MiClip: true
+  Piranha_0.01: true
+  PIP-seq: true
+  CLIPper: false
+
 # Assigns the number of CPU workers to the pipeline.
 # If the tool uses up too much RAM, this can be lowered.
 # In general at least 28 GB free RAM is recommended for ~10 workers.
