@@ -4,6 +4,13 @@ clip_analysis.py
 
 This module contains all classes for analyzing the CLIP data before processing.
 
+Functions
+---------
+count_all_sequences_fasta
+    Counts all sequences in all fasta files of a directory.
+count_all_entries_gff3
+    Counts all entries in a GFF3 file
+
 Classes
 -------
 FullClipEntry
@@ -22,8 +29,58 @@ import yaml
 import os
 from dataclasses import dataclass
 from collections import Counter
+from Bio import SeqIO
 
-from processing.clip_annotation import ClipEntry
+from processing.clip_processing import ClipEntry
+
+def count_all_sequences_fasta(folder_path: str) -> int:
+    """
+    Counts all sequences in all fasta files in the specified directory.
+    Prints the number of sequences for each fasta file.
+
+    Parameters
+    ----------
+    folder_path: str
+        String of the folder path where the fasta files are in.
+
+    Returns
+    -------
+    int
+        Total number of all sequences
+    """
+    total_sequences = 0
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".fasta") or filename.endswith(".fa"):
+            file_path = os.path.join(folder_path, filename)
+            count = sum(1 for _ in SeqIO.parse(file_path, "fasta"))
+            print(f"{filename}: {count} sequences")
+            total_sequences += count
+    return total_sequences
+
+def count_all_entries_gff3(file_path: str) -> int:
+    """
+    Counts all entries in the specified GFF3 file.
+
+    Parameters
+    ----------
+    file_path: str
+        String of the file path.
+
+    Returns
+    -------
+    int
+        Total number of all entries.
+    """
+    unique_chromosomes = set()
+    count = 0
+    with open(file_path) as file:
+        for line in file:
+            if not line.startswith("#") and line.strip():
+                entry = line.strip().split("\t")
+                if len(entry[0]) < 7:
+                    unique_chromosomes.add(entry[0])
+                count += 1
+    return count, unique_chromosomes
 
 @dataclass(frozen=True,slots=True)
 class FullClipEntry(ClipEntry):
@@ -50,18 +107,17 @@ class FullClipEntry(ClipEntry):
         Sample/tisue used in study.
     accession_data: str
         Accession of raw data.
+    acession_experiment: str
+        Experiment accession data string.
     confidence_score: float
         Confidence score assigned by computational method.
     chromosome: str
         Number/name of the chromosome.
     peak_id: str
         ID of the peak in te POSTAR3 data.
-    acession_experiment: str
-        Experiment accession data string.
     """
     chromosome: str
     peak_id: str
-    accession_experiment: str
 
     def to_dict(self) -> dict[str, str | int| float]:
         """
@@ -83,6 +139,7 @@ class FullClipEntry(ClipEntry):
             "software": self.software,
             "sample/tissue": self.sample,
             "accession of raw data": self.accession_data,
+            "accession experiment": self.accession_experiment,
             "confidence score": self.confidence_score
         }
     
@@ -431,15 +488,18 @@ class ClipSpeciesAnalyzer:
         for species_name, species in self.species.items():
             print(f"Analyzing {species_name}:")
             data_analyzer = ClipDataAnalyzer(species, self.software_tools)
-            print(
-                f"Unique chromosomes: {data_analyzer.unique_chromosomes}",
-                f"Unique methods: {data_analyzer.unique_methods}",
-                f"Unique software tools: {data_analyzer.unique_software_tools}",
-                #f"Unique RBPs: {data_analyzer.unique_rbp}",
-                f"Number of unique accession experiments/samples: {len(data_analyzer.unique_accession_experiments)}",
-                f"Number of entries: {len(data_analyzer.clip_data)}",
-                f"Number of filtered: {len(data_analyzer.filter_upper_decile_score())}",
-                sep="\n", end="\n\n"
-                )
+            print(f"{len(data_analyzer.filter_entries(chromosome="CHRM"))}")
+            print(f"unique: chromosomes: {data_analyzer.unique_chromosomes}")
+            #print(
+            #    f"Unique chromosomes: {data_analyzer.unique_chromosomes}",
+            #    f"Unique methods: {data_analyzer.unique_methods}",
+            #    f"Unique software tools: {data_analyzer.unique_software_tools}",
+            #    f"Unique RBPs: {data_analyzer.unique_rbp}",
+            #    f"Number of unique accession experiments/samples: {len(data_analyzer.unique_accession_experiments)}",
+            #    f"Number of entries: {len(data_analyzer.clip_data)}",
+            #    f"Number of filtered: {len(data_analyzer.filter_upper_decile_score())}",
+            #    f"Size of list object:", sys.getsizeof(data_analyzer), "bytes",
+            #    sep="\n", end="\n\n"
+            #    )
             #print(data_analyzer.entries_of_software_for_rbp(), "\n")
             #data_analyzer.all_data_histogram()

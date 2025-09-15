@@ -14,15 +14,15 @@ process_species
 author: U.B.
 """
 
-from processing.data_mapper import SpeciesProcessor
+from processing.fasta_builder import FastaBuilder
 from pre_processing_analysis.clip_analysis import ClipSpeciesAnalyzer
 
 def main():
     """
     Main function processing, predicting and analyzing the data. 
     """
-    #process_species()
-    analyse_clip_data()
+    process_species()
+    #analyse_clip_data()
 
 def analyse_clip_data() -> None:
     analyzer = ClipSpeciesAnalyzer("config.yaml")
@@ -32,8 +32,8 @@ def process_species() -> None:
     """
     Processes the data of all species, specified in the config.yaml.
     """
-    processor = SpeciesProcessor("config.yaml")
-    processor.process_species()
+    fasta_builder = FastaBuilder("config.yaml")
+    fasta_builder.build_fasta_organisms()
 
 if __name__ == "__main__":
     main()
