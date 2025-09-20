@@ -27,13 +27,15 @@ HIGH_CONFIDENCE_SCORER = [
     "Piranha_0.01", "PIP-seq"
 ]
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ClipEntry:
     '''
     Class representing a CLIP entry.
 
     Attributes
     ----------
+    clip_id: str
+        unique ID string for the CLIP entry.
     chromosome: str
         String of the chromosome name/number
     start: int
@@ -47,7 +49,7 @@ class ClipEntry:
     method: str
         CLIP method used in the experiment.
     software: str
-        SOftware used for peak calling.
+        Software used for peak calling.
     sample: str
         Sample/tissue used in the expeiment.
     accession_data: str
@@ -56,8 +58,14 @@ class ClipEntry:
         String of the experiment.
     confidence_score: float
         Score of the CLIP entry.
+    feature_types: list[str]
+        List of feature types the CLIP entry corresponds to
+        in the genome.
+    sequence: str
+        String of the DNA sequence.
     '''
 
+    clip_id: str
     chromosome: str
     start: int
     end: int
@@ -69,6 +77,78 @@ class ClipEntry:
     accession_data: str
     accession_experiment: str
     confidence_score: float
+    feature_types: list[str]
+    sequence: str
+
+    def __hash__(self) -> int:
+        '''
+        Compute a hash value for a ClipEntry instance.
+
+        Returns
+        -------
+        int
+            The hash value representing this ClipEntry instance.
+        '''
+        return hash((
+            self.chromosome,
+            self.start,
+            self.end,
+            self.strand_orientation,
+            self.rbp_name,
+            self.method,
+            self.software,
+            self.sample,
+            self.accession_data,
+            self.accession_experiment,
+            self.confidence_score
+        ))
+
+    def __eq__(self, other: object) -> bool:
+        '''
+        Determine whether two ClipEntry instances are equal.
+
+        Parameters
+        ----------
+        other: object
+            The object to compare with this instance.
+
+        Returns
+        -------
+        bool
+            True if "other" is a ClipEntry instance and all attributes match,
+            false otherwise.
+        '''
+        if not isinstance(other, ClipEntry):
+            return NotImplemented
+        return (
+            self.chromosome == other.chromosome and
+            self.start == other.start and
+            self.end == other.end and
+            self.strand_orientation == other.strand_orientation and
+            self.rbp_name == other.rbp_name and
+            self.method == other.method and
+            self.software == other.software and
+            self.sample == other.sample and
+            self.accession_data == other.accession_data and
+            self.accession_experiment == other.accession_experiment and
+            self.confidence_score == other.confidence_score
+        )
+
+    def to_fasta(self) -> str:
+        '''
+        Creates the header and sequence of a CLIP entry.
+
+        Returns
+        -------
+        str
+            Header and sequence string.
+        '''
+        header = (
+            f">id:{self.clip_id}|chromosome:{self.chromosome}|start:{self.start}|end:{self.end}"
+            f"|strand_orientation:{self.strand_orientation}|rbp_name:{self.rbp_name}"
+            f"|feature_types:[{','.join(self.feature_types)}]"
+            )
+        return f"{header}\n{self.sequence}\n"
     
 class ClipProcessing:
     '''
@@ -220,5 +300,5 @@ class ClipProcessing:
                 chromosome=chromosome, start=start, end=end, strand_orientation=strand,
                 rbp_name=rbp_name, method=method, software=software, sample=sample,
                 accession_data=accession_data, accession_experiment=accession_experiment,
-                confidence_score=score
+                confidence_score=score, feature_types=[], sequence="", clip_id=""
             )

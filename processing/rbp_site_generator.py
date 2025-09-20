@@ -1,118 +1,130 @@
-# TO-DO: Has to be adjusted, since grouping the CLIPs into RBP sites is not an option.
+'''
+rbp_site_generator.py
+~~~~~~~~~~~~~~~~~~~~~
 
-from dataclasses import dataclass
-from collections import defaultdict
+This file contains the class for generating RNA binding protein binding sites.
+
+Classes
+-------
+RbpSiteGenerator
+    Class for generating rbp sites.
+
+author: U.B.
+'''
+
+from collections.abc import Iterator
 
 from processing.clip_processing import ClipEntry, ClipProcessing
 from processing.genome_processing import GenomeProcessing
 from processing.gff3_processing import Gff3Processing
-
-@dataclass(slots=True)
-class RbpSite:
-    chromosome: str
-    start: int
-    end: int
-    strand_orientation: str
-    clip_data: list[ClipEntry]
-    feature_types: list[str]
-    sequence: str
-
-    def to_fasta(self) -> str:
-        unique_rbps = sorted({clip.rbp_name for clip in self.clip_data})
-        rbp_info = ",".join(unique_rbps)
-        header = (
-            f">chromosome:{self.chromosome}|start:{self.start}|end:{self.end}"
-            f"|strand_orientation:{self.strand_orientation}|RBPs={rbp_info}"
-        )
-        return f"{header}\n{self.sequence}\n"
     
 class RbpSiteGenerator:
+    '''
+    Class generating RNA binding protein binding sites for each CLIP entry.
+
+    Attributes
+    ----------
+    organism: str
+        String of the organism name.
+    clip_data: ClipProcessing
+        ClipProcessing instance, where the CLIP data can be extracted.
+    genome: GenomeProcessing
+        GenomeProcessing instance to filter the DNA sequence of the rbp sites.
+    gff3_index: Gff3Processing
+        Gff3Processing inctance to get the feature types and annotation
+        information of the rbp sites.
+    '''
+
     def __init__(self, organism: str):
+        '''
+        Initializes a RbpSiteGenerator instance.
+
+        Parameters
+        ----------
+        organism: str
+            Name string of the organism, the rbp sites are from.
+        '''
         self.organism = organism
         self.clip_data = ClipProcessing(f"data/datasets/{self.organism}/{self.organism}_clip.txt")
         self.genome = GenomeProcessing(f"data/datasets/{self.organism}/{self.organism}_genome.fa")
         self.gff3_index = Gff3Processing(f"data/datasets/{self.organism}/{self.organism}_annotations.gff3")
 
-    def _group_clips_by_chromosome_and_strand(self) -> dict[tuple[str, str], list[ClipEntry]]:
-        grouped_clips = defaultdict(list)
-        for clip in self.clip_data.iterate_clips():
-            key = (clip.chromosome, clip.strand_orientation)
-            grouped_clips[key].append(clip)
-        return grouped_clips
-    
-    def _group_clips_into_sites(self, clips, chromosome: str, strand_orientation: str) -> list[RbpSite]:
-        rbp_sites: list[RbpSite] = []
-        for clip in clips:
-            if not rbp_sites:
-                rbp_sites.append(self._create_rbp_site(chromosome, strand_orientation, clip))
-                continue
-            last_rbp_site = rbp_sites[-1]
-            if self._overlaps(last_rbp_site, clip):
-                self._merge_clip_into_site (last_rbp_site, clip)
-            else:
-                rbp_sites.append(self._create_rbp_site(chromosome, strand_orientation, clip))
-        return rbp_sites
+    def _assign_features(self, clip: ClipEntry) -> bool:
+        '''
+        Assigns the feature types and returns true if the CLIP entry has features.
 
-    @staticmethod
-    def _create_rbp_site(chromosome: str, strand_orientation: str, clip: ClipEntry) -> RbpSite:
-        return RbpSite(
-            chromosome=chromosome,
-            start=clip.start,
-            end=clip.end,
-            strand_orientation=strand_orientation,
-            clip_data=[clip],
-            feature_types=[],
-            sequence=""
-        )
+        Parameters
+        ----------
+        clip: ClipEntry
+            The CLIP entry to check features of and assign them.
 
-    @staticmethod
-    def _overlaps(site: RbpSite, clip: ClipEntry) -> bool:
-        return (
-            (clip.start >= site.start and clip.end <= site.end) or
-            (site.start >= clip.start and site.end <= clip.end)
-        )
-
-    @staticmethod
-    def _merge_clip_into_site (site: RbpSite, clip: ClipEntry) -> None:
-        site.start = min(site.start, clip.start)
-        site.end = max(site.end, clip.end)
-        site.clip_data.append(clip)
-
-    def _assign_features(self, site: RbpSite) -> bool:
+        Returns
+        -------
+        bool
+            True if the CLIP entry has features.
+        '''
         features = []
         if self.gff3_index:
             features = self.gff3_index.get_features(
-                site.chromosome, site.strand_orientation, site.start, site.end
+                clip.chromosome, clip.strand_orientation, clip.start, clip.end
             )
         if not features:
             return False
-        site.feature_types = features
+        clip.feature_types = features
         return True
 
-    def _assign_sequence(self, site: RbpSite) -> bool:
+    def _assign_sequence(self, clip: ClipEntry) -> bool:
+        '''
+        Checks if a CLIP entry has a sequence and assigns it to the entry.
+
+        Parameters
+        ----------
+        clip: ClipEntry
+            The CLIP entry to check a sequence of and assign it.
+
+        Returns
+        -------
+        bool
+            True if the CLIP entry has a sequence.
+        '''
         if not self.genome:
             return False
-        seq_start = max(1, site.start - 50)
-        seq_end = site.end + 50
-        site.sequence = self.genome.get_sequence(
-            site.chromosome, seq_start, seq_end, site.strand_orientation
+        seq_start = max(1, clip.start - 50)
+        seq_end = clip.end + 50
+        clip.sequence = self.genome.get_sequence(
+            clip.chromosome, seq_start, seq_end, clip.strand_orientation
         ) or ""
-        return bool(site.sequence)
+        return bool(clip.sequence)
 
-    def iterate_rbpsites(self):
-        grouped_clips = self._group_clips_by_chromosome_and_strand()
-        for (chromosome, strand_orientation), clips in grouped_clips.items():
-            clips.sort(key=lambda clip: (clip.start, -clip.end))
-            rbp_sites = self._group_clips_into_sites(clips, chromosome, strand_orientation)
-            for site in rbp_sites:
-                if not self._assign_features(site):
-                    continue
-                if not self._assign_sequence(site):
-                    continue
-                yield site
+    def iterate_rbpsites(self) -> Iterator[ClipEntry]:
+        '''
+        Iterates through the CLIPs and yields the entries,
+        to which features can be assigned,
+        to which a sequence can be assigned
+        and that is unique.
+
+        Yields
+        ------
+        ClipEntry
+            CLIP with a sequence and features that consequently correspond to a rbp site.
+        '''
+        unique_clips = set()
+        for clip in self.clip_data.iterate_clips():
+            if not self._assign_features(clip):
+                continue
+            if not self._assign_sequence(clip):
+                continue
+            if clip in unique_clips:
+                continue
+            unique_clips.add(clip)
+            yield clip
 
     def write_fasta(self) -> None:
+        '''
+        Assigns an ID to the CLIP entries and writes them into a FASTA file.
+        '''
         with open(f"data/fasta_files/{self.organism}_rbp_sites.fasta", "w") as file:
-            for rbp_site in self.iterate_rbpsites():
-                rbp_fasta_string = rbp_site.to_fasta()
-                file.write(rbp_fasta_string)
+            for clip_counter, clip in enumerate(self.iterate_rbpsites(), start=1):
+                clip.clip_id = f"{self.organism}:{clip_counter}"
+                clip_string = clip.to_fasta()
+                file.write(clip_string)

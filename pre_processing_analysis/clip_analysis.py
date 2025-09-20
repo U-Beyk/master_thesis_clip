@@ -33,6 +33,12 @@ from Bio import SeqIO
 
 from processing.clip_processing import ClipEntry
 
+# List of peak-calling tools where higher scores indicate higher-confidence peaks.
+HIGH_CONFIDENCE_SCORER = [
+    "eCLIP", "PARalyzer", "PureCLIP", "CTK", "CIMS", "MiClip",
+    "Piranha_0.01", "PIP-seq"
+]
+
 def count_all_sequences_fasta(folder_path: str) -> int:
     """
     Counts all sequences in all fasta files in the specified directory.
@@ -82,7 +88,7 @@ def count_all_entries_gff3(file_path: str) -> int:
                 count += 1
     return count, unique_chromosomes
 
-@dataclass(frozen=True,slots=True)
+@dataclass(slots=True)
 class FullClipEntry(ClipEntry):
     """
     FullClipEntry class representing the blueprint for clip data entries.
@@ -91,26 +97,35 @@ class FullClipEntry(ClipEntry):
 
     Attributes
     ----------
-    start: int 
-        Start of the binding site.
+    clip_id: str
+        unique ID string for the CLIP entry.
+    chromosome: str
+        String of the chromosome name/number
+    start: int
+        Start of the CLIP entry.
     end: int
-        End of the binding site.
+        End of the CLIP entry.
     strand_orientation: str
-        Strand orientation of the sequence.
+        Strand orientation of the CLIP.
     rbp_name: str
         Name of the RNA binding protein.
-    methods: str
-        Experiment method.
+    method: str
+        CLIP method used in the experiment.
     software: str
-        Peak calling software.
+        Software used for peak calling.
     sample: str
-        Sample/tisue used in study.
+        Sample/tissue used in the expeiment.
     accession_data: str
-        Accession of raw data.
-    acession_experiment: str
-        Experiment accession data string.
+        Raw accession data.
+    accesson_experiment: str
+        String of the experiment.
     confidence_score: float
-        Confidence score assigned by computational method.
+        Score of the CLIP entry.
+    feature_types: list[str]
+        List of feature types the CLIP entry corresponds to
+        in the genome.
+    sequence: str
+        String of the DNA sequence.
     chromosome: str
         Number/name of the chromosome.
     peak_id: str
@@ -152,17 +167,13 @@ class ClipDataAnalyzer:
     organism: str
         Organism the CLIP data stems from.
     sowafter_tools: dict[str, bool]
-        Dictionary of software tools.
-        True means that a higher score
-        corresponds to a higher confidence.
-        False means that a lower score
-        corresponds to a higher confidence.
+        List of software tools to include in the analysis.
     clip_data: list[FullClipEntry]
         List of CLIP data.
     """
 
     __slots__ = ("organism", "clip_data", "software_tools")
-    def __init__(self, organism: str, software_tools: dict[str, bool]):
+    def __init__(self, organism: str, software_tools: list[str]):
         """
         Initializes a ClipDataAnalyzer instance.
 
@@ -170,8 +181,8 @@ class ClipDataAnalyzer:
         ----------
         organism: str
             Organism the CLIP data to extract from.
-        software_tools: dict[str, bool]
-            Dictionary of software tools to include in the analysis.
+        software_tools: list[str]
+            List of software tools to include in the analysis.
         """
         self.organism = organism
         self.software_tools = software_tools
@@ -284,7 +295,7 @@ class ClipDataAnalyzer:
         plt.title(f"{file_name}")
         plt.xlabel("Value")
         plt.ylabel("Frequency")
-        plt.savefig(f"plots/pre_processing_plots/{self.organism}/{file_name}.png")
+        plt.savefig(f"plots/pre_processing_plots/{self.organism}/{file_name}.png", dpi=80)
         plt.close()
 
     def filter_entries(self, **criteria) -> list[FullClipEntry]:
@@ -308,14 +319,42 @@ class ClipDataAnalyzer:
             if all(getattr(entry, attribute, None) == value for attribute, value in criteria.items())
             ]
     
-    def all_data_histogram(self) -> None:
+    def all_data_scores_histogram(self) -> None:
         """
-        Creates histograms for each unique software tool.
+        Creates histograms for each unique software tool of their score distribution.
         """
         for tool in self.unique_software_tools:
             score_data = [entry.confidence_score for entry in self.filter_entries(software=tool)]
             if score_data:
                 self.save_histogram(score_data, tool)
+
+    def all_data_clip_length_histogram(self) -> None:
+        '''
+        Creates histograms for each unique method of the nucleotide length of the CLIP.
+        '''
+        for method in self.unique_methods:
+            lengths = [entry.end - entry.start for entry in self.filter_entries(method=method)]
+            if lengths:
+                self.save_histogram(lengths, f"method_{method}")
+
+    def percentage_of_clip_lengths(self, threshold: int) -> float:
+        '''
+        Checks what percentage of the CLIP data has a length above the specified threshold.
+
+        Parameters
+        ----------
+        threshold: int
+            The threshold, which corresponds to the nucleotide length to check for.
+
+        Returns
+        -------
+        float
+            Percentage of the data that is longer than the specified threshold.
+        '''
+        for method in self.unique_methods:
+            lengths = [entry.end - entry.start for entry in self.filter_entries(method=method)]
+            count_above = sum(1 for x in lengths if x > threshold)
+            return round((count_above / len(lengths)) * 100, 3)
 
     def entries_of_software_for_rbp(self) -> dict[str, dict[str, int]]:
         """
@@ -388,7 +427,7 @@ class ClipDataAnalyzer:
         tool_specific_data = [data for data in experiment_data if data.software == software_tool]
         tool_specific_data = sorted(tool_specific_data, key=lambda x: x.confidence_score, reverse=True)
         decile = int(len(tool_specific_data) * 0.1) -1
-        if self.software_tools.get(software_tool):
+        if software_tool in self.software_tools:
             cutoff = tool_specific_data[decile].confidence_score
             decile_data = [data for data in tool_specific_data if data.confidence_score >= cutoff]
         else:
@@ -440,6 +479,7 @@ class ClipDataAnalyzer:
         accession_data, accession_experiment = (accession if len(accession) == 2 
                                                 else (accession[0], ""))
         return FullClipEntry(
+            clip_id="",
             start=int(entry[1]),
             end=int(entry[2]),
             strand_orientation=entry[4],
@@ -451,7 +491,9 @@ class ClipDataAnalyzer:
             confidence_score=float(entry[9]),
             chromosome=entry[0],
             peak_id=entry[3],
-            accession_experiment=accession_experiment
+            accession_experiment=accession_experiment,
+            feature_types=[],
+            sequence=""
         )
     
 class ClipSpeciesAnalyzer:
@@ -478,7 +520,6 @@ class ClipSpeciesAnalyzer:
         with open(config_file, 'r') as file:
             config = yaml.safe_load(file)
             self.species: dict[str, str] = config["organisms"]
-            self.software_tools: dict[str, bool] = config["included_software_tools"]
 
     def analyse_all_organisms(self) -> None:
         """
@@ -487,9 +528,8 @@ class ClipSpeciesAnalyzer:
         # Use this method to analyze specific properties of the datasets.
         for species_name, species in self.species.items():
             print(f"Analyzing {species_name}:")
-            data_analyzer = ClipDataAnalyzer(species, self.software_tools)
-            print(f"{len(data_analyzer.filter_entries(chromosome="CHRM"))}")
-            print(f"unique: chromosomes: {data_analyzer.unique_chromosomes}")
+            data_analyzer = ClipDataAnalyzer(species, HIGH_CONFIDENCE_SCORER)
+            #print(f"unique: chromosomes: {data_analyzer.unique_chromosomes}")
             #print(
             #    f"Unique chromosomes: {data_analyzer.unique_chromosomes}",
             #    f"Unique methods: {data_analyzer.unique_methods}",
@@ -502,4 +542,5 @@ class ClipSpeciesAnalyzer:
             #    sep="\n", end="\n\n"
             #    )
             #print(data_analyzer.entries_of_software_for_rbp(), "\n")
-            #data_analyzer.all_data_histogram()
+            #data_analyzer.all_data_clip_length_histogram()
+            print(f"Percentage above 50 nt: {data_analyzer.percentage_of_clip_lengths(50)}%")
