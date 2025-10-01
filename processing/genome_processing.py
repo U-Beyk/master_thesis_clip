@@ -75,7 +75,7 @@ class GenomeProcessing:
             The specified sequence or None, if the sequence contains ambiguous nucleotides.
         '''
         chromosome = self._chromosome_name_map.get(normalize_chr(chromosome))
-        sequence = str(self.genome[chromosome][start - 1:end]).upper()
+        sequence = str(self.genome[chromosome][start:end]).upper()
         if not set(sequence).issubset({"A", "C", "G", "T"}):
             return None
         if strand_orientation == "-":

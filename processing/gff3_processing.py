@@ -103,5 +103,5 @@ class Gff3Processing:
         interval_tree = self.interval_trees.get((chromosome, strand_orientation))
         if not interval_tree:
             return []
-        hits: set[Interval] = interval_tree.overlap(start - 1, end)
+        hits: set[Interval] = interval_tree.overlap(start, end)
         return list({interval.data for interval in hits})

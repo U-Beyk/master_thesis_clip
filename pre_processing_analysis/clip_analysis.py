@@ -101,9 +101,9 @@ class FullClipEntry(ClipEntry):
         unique ID string for the CLIP entry.
     chromosome: str
         String of the chromosome name/number
-    start: int
+    clip_start: int
         Start of the CLIP entry.
-    end: int
+    clip_end: int
         End of the CLIP entry.
     strand_orientation: str
         Strand orientation of the CLIP.
@@ -126,8 +126,10 @@ class FullClipEntry(ClipEntry):
         in the genome.
     sequence: str
         String of the DNA sequence.
-    chromosome: str
-        Number/name of the chromosome.
+    sequence_start: int | None
+        Start of the sequence, if defined.
+    sequence_end: int | None
+        End of the sequence, if defined.
     peak_id: str
         ID of the peak in te POSTAR3 data.
     """
@@ -145,8 +147,8 @@ class FullClipEntry(ClipEntry):
         """
         return {
             "chromosome": self.chromosome,
-            "start": self.start,
-            "end": self.end,
+            "start": self.clip_start,
+            "end": self.clip_end,
             "peak ID": self.peak_id,
             "strand orientation": self.strand_orientation,
             "RNA binding protein": self.rbp_name,
@@ -352,7 +354,7 @@ class ClipDataAnalyzer:
             Percentage of the data that is longer than the specified threshold.
         '''
         for method in self.unique_methods:
-            lengths = [entry.end - entry.start for entry in self.filter_entries(method=method)]
+            lengths = [entry.clip_end - entry.clip_start for entry in self.filter_entries(method=method)]
             count_above = sum(1 for x in lengths if x > threshold)
             return round((count_above / len(lengths)) * 100, 3)
 
@@ -493,7 +495,9 @@ class ClipDataAnalyzer:
             peak_id=entry[3],
             accession_experiment=accession_experiment,
             feature_types=[],
-            sequence=""
+            sequence="",
+            sequence_start=None,
+            sequence_end=None
         )
     
 class ClipSpeciesAnalyzer:

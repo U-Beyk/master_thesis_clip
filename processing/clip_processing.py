@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from processing.utils import normalize_chr
 
 # List of peak-calling tools where higher scores indicate higher-confidence peaks.
+# MOVE IT TO THE CONFIG??????????
 HIGH_CONFIDENCE_SCORER = [
     "eCLIP", "PARalyzer", "PureCLIP", "CTK", "CIMS", "MiClip",
     "Piranha_0.01", "PIP-seq"
@@ -38,9 +39,9 @@ class ClipEntry:
         unique ID string for the CLIP entry.
     chromosome: str
         String of the chromosome name/number
-    start: int
+    clip_start: int
         Start of the CLIP entry.
-    end: int
+    clip_end: int
         End of the CLIP entry.
     strand_orientation: str
         Strand orientation of the CLIP.
@@ -63,12 +64,16 @@ class ClipEntry:
         in the genome.
     sequence: str
         String of the DNA sequence.
+    sequence_start: int | None
+        Start of the sequence, if defined.
+    sequence_end: int | None
+        End of the sequence, if defined.
     '''
 
     clip_id: str
     chromosome: str
-    start: int
-    end: int
+    clip_start: int
+    clip_end: int
     strand_orientation: str
     rbp_name: str
     method: str
@@ -79,6 +84,8 @@ class ClipEntry:
     confidence_score: float
     feature_types: list[str]
     sequence: str
+    sequence_start: int
+    sequence_end: int
 
     def __hash__(self) -> int:
         '''
@@ -91,8 +98,8 @@ class ClipEntry:
         '''
         return hash((
             self.chromosome,
-            self.start,
-            self.end,
+            self.clip_start,
+            self.clip_end,
             self.strand_orientation,
             self.rbp_name,
             self.method,
@@ -122,8 +129,8 @@ class ClipEntry:
             return NotImplemented
         return (
             self.chromosome == other.chromosome and
-            self.start == other.start and
-            self.end == other.end and
+            self.clip_start == other.clip_start and
+            self.clip_end == other.clip_end and
             self.strand_orientation == other.strand_orientation and
             self.rbp_name == other.rbp_name and
             self.method == other.method and
@@ -144,9 +151,8 @@ class ClipEntry:
             Header and sequence string.
         '''
         header = (
-            f">id:{self.clip_id}|chromosome:{self.chromosome}|start:{self.start}|end:{self.end}"
-            f"|strand_orientation:{self.strand_orientation}|rbp_name:{self.rbp_name}"
-            f"|feature_types:[{','.join(self.feature_types)}]"
+            f">id:{self.clip_id}|clip_range:{self.clip_start}-{self.clip_end}|rbp_name:{self.rbp_name}"
+            f"|seq_range:{self.sequence_start}-{self.sequence_end}|features:{','.join(self.feature_types)}"
             )
         return f"{header}\n{self.sequence}\n"
     
@@ -297,8 +303,8 @@ class ClipProcessing:
                 continue
             # Creates and yields a ClipEntry object
             yield ClipEntry(
-                chromosome=chromosome, start=start, end=end, strand_orientation=strand,
-                rbp_name=rbp_name, method=method, software=software, sample=sample,
-                accession_data=accession_data, accession_experiment=accession_experiment,
-                confidence_score=score, feature_types=[], sequence="", clip_id=""
+                clip_id="", chromosome=chromosome, clip_start=start, clip_end=end, 
+                strand_orientation=strand, rbp_name=rbp_name, method=method, software=software, 
+                sample=sample, accession_data=accession_data, accession_experiment=accession_experiment,
+                confidence_score=score, feature_types=[], sequence="", sequence_start=None, sequence_end=None
             )

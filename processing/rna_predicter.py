@@ -12,6 +12,7 @@ author: U.B.
 
 import yaml
 import subprocess
+import os
 
 class RNAPredicter:
     '''
@@ -75,10 +76,27 @@ class RNAPredicter:
             "--no_update",
         ]
         subprocess.run(cmd, cwd=script_folder, check=True)
+
+    @staticmethod
+    def _delete_old_prediction_file(organism: str) -> None:
+        '''
+        Deletes the old prediction file, so that the predictions won't be appended when rerunning pipeline.
+        
+        Parameters
+        ----------
+        organism: str
+            The string of the organism to delete the prediction file of.
+        '''
+        file_path = f"./data/rna_predictions/{organism}_prediction.csv"
+        if os.path.exists(file_path):
+            os.remove(file_path)
         
     def run_predictions(self) -> None:
         '''
         Runs the predictions on all organisms specified in the config file.
         '''
+        print("Running predictions!")
         for organism in self.organisms.values():
+            self._delete_old_prediction_file(organism)
             self._predict_organism(organism)
+        print("Finished predictions!")

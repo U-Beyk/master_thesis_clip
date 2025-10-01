@@ -1,7 +1,8 @@
 '''
 main.py
+~~~~~~~
 
-Main file which works as a pipeline for the processing , predicting and analysis of the CLIP data.
+Main file which works as a pipeline for the processing, predicting and analysis of the CLIP data.
 
 Functions
 ---------
@@ -18,17 +19,20 @@ predict_species
 author: U.B.
 '''
 
+from pre_processing_analysis.clip_analysis import ClipSpeciesAnalyzer
 from processing.fasta_builder import FastaBuilder
 from processing.rna_predicter import RNAPredicter
-from pre_processing_analysis.clip_analysis import ClipSpeciesAnalyzer
+from prediction_analysis.species_analyzer import SpeciesAnalyzer
 
 def main():
     '''
     Main function processing, predicting and analyzing the data.
     '''
-    process_species()
-    predict_species()
+    #process_species()
+    #predict_species()
+    analyze_predictions()
 
+# TO-DO: Put these classes together into one???
 def analyse_clip_data() -> None:
     '''
     Analyzes the CLIP data.
@@ -49,6 +53,10 @@ def predict_species() -> None:
     '''
     predicter = RNAPredicter("config.yaml")
     predicter.run_predictions()
+
+def analyze_predictions() -> None:
+    analyzer = SpeciesAnalyzer("config.yaml")
+    analyzer.analyze_all_organisms()
 
 if __name__ == "__main__":
     main()

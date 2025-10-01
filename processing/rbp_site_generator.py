@@ -66,7 +66,7 @@ class RbpSiteGenerator:
         features = []
         if self.gff3_index:
             features = self.gff3_index.get_features(
-                clip.chromosome, clip.strand_orientation, clip.start, clip.end
+                clip.chromosome, clip.strand_orientation, clip.clip_start, clip.clip_end
             )
         if not features:
             return False
@@ -76,6 +76,7 @@ class RbpSiteGenerator:
     def _assign_sequence(self, clip: ClipEntry) -> bool:
         '''
         Checks if a CLIP entry has a sequence and assigns it to the entry.
+        Also assigns the sequence start and end to the CLIP entry.
 
         Parameters
         ----------
@@ -89,8 +90,9 @@ class RbpSiteGenerator:
         '''
         if not self.genome:
             return False
-        seq_start = max(1, clip.start - 50)
-        seq_end = clip.end + 50
+        seq_start = max(1, clip.clip_start - 50)
+        seq_end = clip.clip_end + 50
+        clip.sequence_start, clip.sequence_end  = seq_start, seq_end
         clip.sequence = self.genome.get_sequence(
             clip.chromosome, seq_start, seq_end, clip.strand_orientation
         ) or ""
