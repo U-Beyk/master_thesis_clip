@@ -1,50 +1,46 @@
-"""
-gff3_processing.py
-~~~~~~~~~~~~~~~~~~~~~~~~
+'''
+gff3_processor.py
+=================
 
-Includes the class related to the annotation and parsing of the GFF3 files.
-
-Classes
--------
-Gff3Processing
-    Processes and maps the entries of the GFF3 file to the CLIP data.
+Module for parsing and processing GFF3 genomic annotation files.
 
 author: U.B.
-"""
+'''
 
 from collections import defaultdict
-from intervaltree import IntervalTree, Interval
 
-from processing.utils import normalize_chr
+from intervaltree import Interval, IntervalTree
 
-class Gff3Processing:
+from .utils import normalize_chr
+
+class Gff3Processor:
     '''
     Class handling the processing and mapping of the GFF3 entries.
 
     Attributes
     ----------
-    interval_trees: dict[tuple[str, str], IntervalTree]
+    _interval_trees: dict[tuple[str, str], IntervalTree]
         Interval trees by chromosome and strand orientation.
     '''
 
-    def __init__(self, gff3_path: str):
+    def __init__(self, gff3_file: str):
         '''
-        Initializes a Gff3Processing object.
+        Initializes a Gff3Processor object.
 
         Parameters
         ----------
-        gff3_path: str
+        gff3_file: str
             String of the path to the gff3-file.
         '''
-        self.interval_trees: dict[tuple[str, str], IntervalTree] = self._load_gff3(gff3_path)
+        self._interval_trees: dict[tuple[str, str], IntervalTree] = self._load_gff3(gff3_file)
     
-    def _load_gff3(self, gff3_path: str) -> dict[tuple[str, str], IntervalTree]:
+    def _load_gff3(self, gff3_file: str) -> dict[tuple[str, str], IntervalTree]:
         '''
         Loads the gff3 file and creates interval trees.
 
         Parameters
         ----------
-        gff3_path: str
+        gff3_file: str
             The path to the gff3 file.
 
         Returns
@@ -53,7 +49,7 @@ class Gff3Processing:
             Dictionary with the interval trees of each chromosome, strand orientation tuple.
         '''
         interval_trees: dict[tuple[str, str], IntervalTree] = defaultdict(IntervalTree)
-        with open(gff3_path) as file:
+        with open(gff3_file) as file:
             for line in file:
                 if line.startswith("#"):
                     continue
@@ -99,8 +95,14 @@ class Gff3Processing:
             Start of the sequence.
         end: int
             End of the sequence.
+
+        Returns
+        -------
+        list[str]
+            A list of feature type names that overlap the specified genomic interval.
+            Returns an empty list if no overlapping features are found.
         '''
-        interval_tree = self.interval_trees.get((chromosome, strand_orientation))
+        interval_tree = self._interval_trees.get((chromosome, strand_orientation))
         if not interval_tree:
             return []
         hits: set[Interval] = interval_tree.overlap(start, end)

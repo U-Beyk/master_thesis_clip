@@ -13,6 +13,8 @@ import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.ticker import FixedLocator
 
+# TODO: Change parent class to Plot and filename to plot.py.
+# TODO: Refactor classes.
 @dataclass
 class Visualization(ABC):
     '''Abstract base class for motif analysis visualizations.'''
@@ -35,20 +37,22 @@ class Visualization(ABC):
 @dataclass
 class BarChart(Visualization):
     '''Bar chart representation of motif analysis results.'''
-    motif_numbers: dict
+    motif_numbers: pd.Series
     max_value: int
-
-    def __post_init__(self):
-        '''Sort motifs based on their frequency.'''
-        self.motifs, self.numbers = zip(*sorted(self.motif_numbers.items(), key=lambda item: item[1], reverse=True))
 
     def _draw(self, ax: Axes) -> None:
         '''Draws bar chart visualization.'''
-        ax.bar(self.motifs, self.numbers, color="blue", width=0.8)
-        for bar in ax.patches:
-            yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, yval, str(int(yval)),
-                    ha="center", va="bottom", fontsize=16)
+        sns.barplot(
+            x=self.motif_numbers.index,
+            y=self.motif_numbers.values,
+            ax=ax,
+            color="blue"
+        )
+        for i, value in enumerate(self.motif_numbers.values):
+            ax.text(
+                i, value, str(int(value)),
+                ha="center", va="bottom", fontsize=16
+            )
         self._style_axes(ax)
 
     def _add_entry_count(self, ax: Axes) -> None:
@@ -64,16 +68,17 @@ class BarChart(Visualization):
 
     def _style_axes(self, ax: Axes) -> None:
         '''Styles bar chart axes.'''
-        max_height = max(self.numbers)
+        max_height = self.motif_numbers.max()
         ax.set_ylim(0, max_height * 1.15)
         ax.set_title(self.title, pad=20)
         ax.set_xlabel("Motifs", fontsize=20)
-        ax.tick_params(axis="x", labelrotation=45)
+        ax.set_ylabel("Count", fontsize=18)
+        ax.tick_params(axis="x", labelrotation=45, labelsize=22)
         ax.tick_params(axis="y", labelsize=20)
-        ax.set_xticks(range(len(self.motifs)))
-        ax.set_xticklabels(self.motifs, ha="right", fontsize=22)
+        plt.setp(ax.get_xticklabels(), ha="right")
         self._add_entry_count(ax)
 
+# TODO: Refactor Histogram, so that it takes a pd.Series
 @dataclass
 class Histogram(BarChart):
     '''Histogram representation, inherits functionality from BarChart.'''
@@ -144,6 +149,7 @@ class ViolinPlot(Visualization):
             inner="box", density_norm="width", palette="Set2", legend=False, ax=ax, cut=0)
         self._style_axes(ax)
 
+# TODO: Refactor Heatmap class.
 @dataclass
 class HeatMap(Visualization):
     '''Heatmap representation of motif median values.'''

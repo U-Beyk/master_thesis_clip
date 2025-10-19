@@ -1,12 +1,13 @@
 import yaml
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from prediction_analysis.rna_predictions_visualizer import CLIPPredictionVisualizer, AnalyzerConfig
+from ..constants import ORGANISMS_TO_EXAMINE
+from .analyzer import Analyzer, AnalyzerConfig
 
 class SpeciesAnalyzer:
 
-    def __init__(self, config_file: str):
-        self.organisms: dict[str, str] = self._extract_organisms(config_file)
+    def __init__(self):
+        self.organisms: dict[str, str] = ORGANISMS_TO_EXAMINE
     
     @staticmethod
     def _extract_organisms(config_file: str) -> dict[str, str]:
@@ -33,7 +34,7 @@ class SpeciesAnalyzer:
         f"./data/fasta_files/{organism}_rbp_sites.fasta",
         f"./data/rna_predictions/{organism}_prediction.csv"
         )
-        visualizer = CLIPPredictionVisualizer(
+        visualizer = Analyzer(
             config,
             organism
         )

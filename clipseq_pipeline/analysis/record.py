@@ -2,7 +2,7 @@ import copy
 from typing import Self
 from dataclasses import dataclass, field
 
-from prediction_analysis.prediction import CLIPmotiFoldPrediction, CLIPmotiCesPrediction 
+from .prediction import CLIPmotiFoldPrediction, CLIPmotiCesPrediction 
 
 @dataclass(slots=False)
 class CLIPmotiFoldRecord:
@@ -26,6 +26,12 @@ class CLIPmotiFoldRecord:
         sequence_start, sequence_end = map(int, id_part[3].split("seq_range:")[1].split("-"))
         feature_types = id_part[4].split("features:")[1].split(",")
         return cls(sequence_id, clip_start, clip_end, rbp_name, sequence_start, sequence_end, feature_types, sequence)
+    
+    @property
+    def rel_clip_start_end(self) -> tuple[int, int]:
+        """Returns the clip start and end positions relative to the sequence start."""
+        return (self.clip_start - self.sequence_start,
+                self.clip_end - self.sequence_start)
 
     @property
     def mfe_prediction(self) -> CLIPmotiFoldPrediction | None:
@@ -93,7 +99,8 @@ class CLIPmotiFoldRecord:
         min_mfe = self.mfe_value
         for prediction in self.predictions:
             prediction.distance_to_mfe = prediction.free_energy - min_mfe
-    
+
+# TODO: Change or implement new method, that gets only the potential motifs, that overlap with CLIP data.
 @dataclass(slots=False)
 class CLIPmotiCesRecord(CLIPmotiFoldRecord):
     predictions: list[CLIPmotiCesPrediction] = field(default_factory=list) 

@@ -1,6 +1,6 @@
 # Master thesis
 
-**THIS IS A WORK IN PROGRESS!**
+**THIS IS A WORK IN PROGRESS! This README is not up to date!**
 
 **The aim of this thesis is to examine RNA structures of RNA binding protein binding sites and their RNA 3D motifs.**
 

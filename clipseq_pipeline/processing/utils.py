@@ -1,8 +1,8 @@
-"""
+'''
 utils.py
-~~~~~~~~
+========
 
-This module contains generic utility functions.
+This module contains generic utility functions of the processing stage.
 
 Functions
 ---------
@@ -10,15 +10,9 @@ normalize_chr
     Normalizes the chromosome string.
 
 author: U.B.
-"""
+'''
 
-# Maps ambiguous chromosome names
-AMBIGUOUS_CHR_MAPPING = {
-    # Mitochondrial variants
-    "M": "MT",
-    "MTDNA": "MT",
-    "MITO": "MT"
-}
+from ..constants import AMBIGUOUS_CHR_MAPPING
 
 def normalize_chr(chromosome: str) -> str:
     '''

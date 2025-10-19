@@ -1,8 +1,8 @@
 import re
 from dataclasses import dataclass, field
 
-# TO-DO: Implement recognition of ambiguous motifs instead of hardcoding
-AMBIGUOUS_MOTIFS = {"u": "GU", "g": "GT", "t": "GT"}
+from ..constants import AMBIGUOUS_MOTIFS
+from ..constants import CLIP_NT_WINDOW
 
 @dataclass(slots=False)
 class CLIPmotiFoldPrediction:
@@ -32,10 +32,42 @@ class CLIPmotiFoldPrediction:
             return {"No motif": self.distance_to_mfe}
         return {motif: self.distance_to_mfe for motif in self.motifs_set}
 
-    # TO-DO: Check indexing, if correct.
+    # TODO: Check indexing, if correct.
+    # TODO: Refactor code. 
     @property
     def clip_overlap_motifs_set(self) -> None:
-        clip_structure = self.mot_bracket[self.rel_start_end[0]: self.rel_start_end[1] + 1]
+        clip_start, clip_end = self.rel_start_end
+        clip_length = clip_end - clip_start + 1
+        target_length = CLIP_NT_WINDOW
+
+        # Extends evenly on both sides
+        extend_total = max(0, target_length - clip_length)
+        extend_left = extend_total // 2
+        extend_right = extend_total - extend_left
+
+        # Applies left extension, respecting lower bound (0)
+        seq_start = max(0, clip_start - extend_left)
+        # Applies right extension, respecting upper bound
+        seq_end = min(len(self.mot_bracket), clip_end + extend_right)
+        
+        actual_right_ext = seq_end - clip_end  # actual extension on right side
+        actual_left_ext = clip_start - seq_start  # actual extension on left side
+
+        # Extends the other side when another side hit s a boundary
+        if (actual_left_ext + actual_right_ext) < extend_total:
+            remaining = extend_total - (actual_left_ext + actual_right_ext)
+
+            # Extends the right side if possible
+            if seq_end < len(self.mot_bracket):
+                add_right = min(remaining, len(self.mot_bracket) - seq_end)
+                seq_end += add_right
+                remaining -= add_right
+
+            # Extends the left side if possible
+            if remaining > 0 and seq_start > 0:
+                seq_start = max(0, seq_start - remaining)
+
+        clip_structure = self.mot_bracket[seq_start:seq_end]
         motifs = set()
         for motif in clip_structure:
             if motif in ".()":
@@ -44,6 +76,7 @@ class CLIPmotiFoldPrediction:
                 motifs.update(AMBIGUOUS_MOTIFS[motif])
             else:
                 motifs.update(motif)
+
         return motifs
 
     @property
@@ -57,11 +90,11 @@ class CLIPmotiFoldPrediction:
             for motif in self.clip_overlap_motifs_set
         }
     
+# TODO: Change or implement new method, that gets only the potential motifs, that overlap with CLIP data.
 @dataclass(slots=False)
 class CLIPmotiCesPrediction(CLIPmotiFoldPrediction):
     potential_motif_sequences: list[str] = field(init=False, default_factory=list)
 
-    # TO-DO: Change or implement new method, that gets only the potential motifs, that overlap with CLIP data.
     def compute_potential_motifs(self, sequence) -> None:
         '''Computes the potential motif for the corresponding sequence of that prediction.'''
         for position in self.positions_without_motif:
