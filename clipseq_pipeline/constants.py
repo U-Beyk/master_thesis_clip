@@ -2,10 +2,10 @@
 ORGANISMS_TO_EXAMINE = {
     #"Arabidopsis thaliana": "arabidopsis_thaliana",
     #"Caenorhabditis elegans": "caenorhabditis_elegans",
-    "Danio rerio": "danio_rerio",
+    #"Danio rerio": "danio_rerio",
     #"Drosophila melanogaster": "drosophila_melanogaster",
     #"Homo sapiens": "homo_sapiens",
-    #"Mus musculus": "mus_musculus",
+    "Mus musculus": "mus_musculus",
     #"Saccharomyces cerevisiae": "saccharomyces_cerevisiae"
 }
 
@@ -30,15 +30,15 @@ AMBIGUOUS_CHR_MAPPING = {
     "MITO": "MT"
 }
 
-
-# Ambiguous motifs from the RNAmotiFold prediction, where lower case means that the motif can equal to two different motifs.
-AMBIGUOUS_MOTIFS = {"u": "GU", "g": "GT", "t": "GT"}
-
 # Correpsonds to the number of workers for the RNA predictions.
 RNA_PREDICTION_WORKER = 12
 
 # This value determines the number of the lowest free energy values of the classes
 RNA_PREDICTION_K_VALUE = 10
+
+
+# Ambiguous motifs from the RNAmotiFold prediction, where lower case means that the motif can equal to two different motifs.
+AMBIGUOUS_MOTIFS = {"u": "GU", "g": "GT", "t": "GT"}
 
 # The max CLIP window in the RNA sequence to use for analysing
 CLIP_NT_WINDOW = 50

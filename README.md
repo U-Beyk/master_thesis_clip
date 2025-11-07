@@ -46,19 +46,15 @@ The following format was used: {folder_name}_genome, {folder_name}_annotations, 
 For instance, in the Homo sapiens folder, the files were named as follows:
 homo_sapiens_genome, homo_sapiens_annotations and homo_sapiens_clip.
 
-A config.yaml file was created to include these organisms and other importatn settings.
+A constants.py file was created to include these organisms and other importatn settings.
 
 Before running the project, the required packages should be installed via the requirements.txt with following command:  
 **pip install -r requirements.txt**
 
 The analysis can be run with:  
-**python3 main.py**
-
-The tool can use up a lot of RAM, so having at around ~28GB free RAM is recommended,
-otherwise the number of workers in the config.yaml can be decreased. 
-If the amount of free RAM is much higher the number can also be increased.
+**python3 -m clipseq_pipeline**
 
 To be on the safe site, use following command when running the analysis:  
-**systemd-run --scope -p MemoryMax=28G --user python3 main.py**  
+**systemd-run --scope -p MemoryMax=28G --user python3 -m clipseq_pipeline**  
 With this command, it is possible to specify a max memory usage. If that number is exceeded,
 the program will be terminated.

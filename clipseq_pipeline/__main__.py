@@ -1,8 +1,8 @@
 import argparse
 
-from .analysis import run_analysis
-from .prediction import run_prediction
-from .processing import run_processing
+from clipseq_pipeline.analysis import run_analysis
+from clipseq_pipeline.prediction import run_prediction
+from clipseq_pipeline.processing import run_processing
 
 STAGES = {
     "processing": run_processing,
