@@ -1,20 +1,11 @@
 from abc import ABC, abstractmethod
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Callable
 
 import pandas as pd
 
-from .transformer import FilteredRbpDf
-
 type FormatFn = Callable[[pd.DataFrame], pd.DataFrame]
-
-@dataclass(frozen=True)
-class FormattedRbpDf:
-    filter_name: str
-    rbp_name: str
-    format_name: str
-    df: pd.DataFrame
 
 @dataclass(frozen=True)
 class RnaFormatter:
@@ -96,29 +87,40 @@ class PotentialMotifFormatter(DataFormatterStrategy):
     def format(df: pd.DataFrame) -> pd.DataFrame:
         raise NotImplementedError("PotentialMotifFormatter Class and format method are not implemented yet.")
     
-
+# TODO: Refactor code.
 def apply_formatters(
-        filtered_dfs: list[FilteredRbpDf],
+        filtered_dfs: pd.DataFrame,
         formatters: list[RnaFormatter]
-    ) -> list[FormattedRbpDf]:
-    formatted_dfs: list[FormattedRbpDf] = []
+    ) -> pd.DataFrame:
+    """
+    Apply a list of RnaFormatter pipelines to each (filter_name, rbp_name) group
+    in a MultiIndex DataFrame and return a new DataFrame with a 3-level MultiIndex:
+        format_name -> filter_name -> rbp_name
+    Each row contains the resulting formatted DataFrame for that group.
+    """
+    records = []
 
-    for filtered in filtered_dfs:
+    grouped = filtered_dfs.groupby(level=["filter_name", "rbp_name"])
+
+    for (filter_name, rbp_name), group_df in grouped:
         for formatter in formatters:
-            df = filtered.df
+            df = group_df.copy()
             for fn in formatter.pipeline:
                 df = fn(df)
             if df.empty:
                 continue
-            formatted_dfs.append(
-                FormattedRbpDf(
-                    filter_name=filtered.filter_name,
-                    rbp_name=filtered.rbp_name,
-                    format_name=formatter.name,
-                    df=df
-                )
-            )
-    return formatted_dfs
+            records.append((formatter.name, filter_name, rbp_name, df))
+
+    if not records:
+        return pd.DataFrame(
+            columns=["format_name", "filter_name", "rbp_name", "data"]
+        ).set_index(["format_name", "filter_name", "rbp_name"])
+
+    formatted_df = pd.DataFrame(
+        records, columns=["format_name", "filter_name", "rbp_name", "data"]
+    ).set_index(["format_name", "filter_name", "rbp_name"])
+
+    return formatted_df
 
 
 RNAMOTIFOLD_FORMATS: list[RnaFormatter] = [
@@ -126,7 +128,7 @@ RNAMOTIFOLD_FORMATS: list[RnaFormatter] = [
     RnaFormatter("motif_distances", [MotifDistanceFormatter().format]),
 ]
 
-def format_motifold_dfs(filtered_dfs: list[FilteredRbpDf]) -> list[FormattedRbpDf]:
+def format_motifold_dfs(filtered_dfs: pd.DataFrame) -> pd.DataFrame:
     return apply_formatters(filtered_dfs, RNAMOTIFOLD_FORMATS)
 
 
@@ -134,5 +136,5 @@ RNAMOTICES_FORMATS: list[RnaFormatter] = [
     RnaFormatter("potential_motifs", [PotentialMotifFormatter().format])
 ]
 
-def format_motices_dfs(filtered_dfs: list[FilteredRbpDf]) -> list[FormattedRbpDf]:
+def format_motices_dfs(filtered_dfs: pd.DataFrame) -> pd.DataFrame:
     return apply_formatters(filtered_dfs, RNAMOTICES_FORMATS)

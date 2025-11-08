@@ -10,12 +10,6 @@ class RnaFilter:
     name: str
     pipeline: list[FilterFn]
 
-@dataclass(frozen=True)
-class FilteredRbpDf:
-    filter_name: str
-    rbp_name: str
-    df: pd.DataFrame
-
 def filter_mfe_below_zero(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["mfe"] < 0]
 
@@ -46,9 +40,10 @@ def filter_by_mirna(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_rbp_dfs(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    dict_dfs = {"ALL_DATA": df.copy()}
+    dict_dfs = {"all_data": df.copy()}
     for rbp in df["rbp_name"].unique():
         rbp_df: pd.DataFrame = df[df["rbp_name"] == rbp]
+        rbp: str = rbp.lower()
         dict_dfs[rbp] = rbp_df.copy()
     return dict_dfs
 
@@ -57,18 +52,37 @@ def apply_pipeline(df: pd.DataFrame, pipeline: list[FilterFn]) -> pd.DataFrame:
         df = fn(df)
     return df
 
-def apply_rna_filters(df: pd.DataFrame, filters: list[RnaFilter]) -> list[FilteredRbpDf]:
-    rbp_dfs = build_rbp_dfs(df)
-    filtered_dfs: list[FilteredRbpDf] = []
+# TODO: Refactor code.
+def apply_rna_filters_multiindex(df: pd.DataFrame, filters: list[RnaFilter]) -> pd.DataFrame:
+    """
+    Apply RNA filters to the RBP DataFrames and return a MultiIndex DataFrame.
+    
+    MultiIndex levels:
+    - filter_name
+    - rbp_name
+    - original row index of filtered df
+    """
+    rbp_dataframes = build_rbp_dfs(df)
+    filtered_results = []
 
     for rna_filter in filters:
-        for rbp_name, rbp_df in rbp_dfs.items():
+        for rbp_name, rbp_df in rbp_dataframes.items():
             filtered_df = apply_pipeline(rbp_df, rna_filter.pipeline)
             if filtered_df.empty:
                 continue
-            filtered_dfs.append(FilteredRbpDf(rna_filter.name, rbp_name, filtered_df))
 
-    return filtered_dfs
+            filtered_df = filtered_df.copy()
+            filtered_df["filter_name"] = rna_filter.name
+            filtered_df["rbp_name"] = rbp_name
+
+            filtered_results.append(filtered_df)
+
+    if not filtered_results:
+        return pd.DataFrame(columns=df.columns).set_index(["filter_name", "rbp_name"])
+
+    combined_df = pd.concat(filtered_results)
+    combined_df.set_index(["filter_name", "rbp_name"], inplace=True)
+    return combined_df
 
 RNAMOTIFOLD_FILTERS: list[RnaFilter] = [
     RnaFilter("mfe_below0", [filter_mfe_below_zero]),
@@ -82,13 +96,13 @@ RNAMOTIFOLD_FILTERS: list[RnaFilter] = [
     RnaFilter("mirna_mfe_below0", [filter_mfe_below_zero, filter_by_mirna])
 ]
 
-def trans_motifold_dfs(df: pd.DataFrame) -> list[FilteredRbpDf]:
-    return apply_rna_filters(df, RNAMOTIFOLD_FILTERS)
+def trans_motifold_dfs(df: pd.DataFrame) -> pd.DataFrame:
+    return apply_rna_filters_multiindex(df, RNAMOTIFOLD_FILTERS)
 
 RNAMOTICES_FILTERS: list[RnaFilter] = [
     # TODO: Add filters.
 ]
 
 # TODO: Implement method.
-def trans_motices_dfs(df:pd.DataFrame) -> list[FilteredRbpDf]:
+def trans_motices_dfs(df:pd.DataFrame) -> pd.DataFrame:
     raise NotImplementedError("trans_motices_dfs method is not implemented yet.")
