@@ -50,6 +50,9 @@ class ClipEntry:
         Start of the sequence, if defined.
     sequence_end: int | None
         End of the sequence, if defined.
+    shuffled_sequence: str
+        String of the shuffled DNA-sequence
+        with nt and dinucleotide preservation.
     '''
 
     clip_id: str
@@ -68,6 +71,7 @@ class ClipEntry:
     sequence: str
     sequence_start: int | None
     sequence_end: int | None
+    shuffled_sequence: str
 
     def __hash__(self) -> int:
         '''
@@ -113,6 +117,25 @@ class ClipEntry:
             self.sequence == other.sequence
         )
 
+    @property
+    def header(self) -> str:
+        '''
+        Header of the CLIP entry with the most important attributes as a string.
+
+        Returns
+        -------
+        str
+            Header attributes in string format.
+        '''
+        features = ",".join(self.feature_types)
+        return (
+            f"id:{self.clip_id}"
+            f"|clip_range:{self.clip_start}-{self.clip_end}"
+            f"|rbp_name:{self.rbp_name}"
+            f"|seq_range:{self.sequence_start}-{self.sequence_end}"
+            f"|features:{features}"
+        )
+
     def to_fasta(self) -> str:
         '''
         Creates the header and sequence of a CLIP entry.
@@ -122,8 +145,16 @@ class ClipEntry:
         str
             Header and sequence string.
         '''
-        header = (
-            f">id:{self.clip_id}|clip_range:{self.clip_start}-{self.clip_end}|rbp_name:{self.rbp_name}"
-            f"|seq_range:{self.sequence_start}-{self.sequence_end}|features:{','.join(self.feature_types)}"
-            )
-        return f"{header}\n{self.sequence}\n"
+        return f">{self.header}\n{self.sequence}\n"
+    
+    def to_shuffled_fasta(self) -> str:
+        '''
+        Creates the header and sequence of a dinucleotide preserving shuffle
+        of the CLIP entry and it sequence.
+
+        Returns
+        -------
+        str
+            Header and sequence string
+        '''
+        return f">{self.header}\n{self.shuffled_sequence}\n"

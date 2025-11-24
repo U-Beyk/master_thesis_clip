@@ -2,11 +2,6 @@ from typing import Callable
 
 import pandas as pd
 
-from .formatter import FormattedRbpDf
-#
-from .reporter import chi2_proteins_motifs
-#
-
 type DataFrameInitializer = Callable[[str, str], pd.DataFrame]
 type DataFrameTransformer = Callable[[pd.DataFrame], pd.DataFrame]
 type DataFrameFormatter = Callable[[pd.DataFrame], pd.DataFrame]
@@ -22,40 +17,41 @@ class AnalysisPipeline:
         transformer: DataFrameTransformer,
         formatter: DataFrameFormatter,
         plotter: DataFramePlotter,
-        #reporter: DataFrameReporter
+        reporter: DataFrameReporter
     ):
-        self.base_filepath = f"./data/plots/{organism}/{algorithm}"
+        self.organism = organism
+        self.algorithm = algorithm
         self.initializer = initializer
         self.transformer = transformer
         self.formatter = formatter
         self.plotter = plotter
-        #self.reporter = reporter
+        self.reporter = reporter
 
+    # TODO: Fix method.
     def _initialize_df(self, fasta_filepath: str, predictions_filepath: str) -> pd.DataFrame:
-        """Create a DataFrame using the provided initializer."""
+        fasta_original = f"./data/fasta_files/{self.organism}/{self.organism}_rbp_sites.fasta"
+        predictions_original = f"./data/rna_predictions/{self.organism}/{self.organism}_prediction.csv"
+        fasta_shuffled = f"./data/fasta_files/{self.organism}/{self.organism}_shuffled_rbp_sites.fasta"
+        predictions_shuffled = f"./data/rna_predictions/{self.organism}/{self.organism}_shuffled_prediction.csv"
         return self.initializer(fasta_filepath, predictions_filepath)
 
     def _transform_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply the transformer function."""
         return self.transformer(df)
     
-    def _format_dfs(self, dfs: pd.DataFrame) -> pd.DataFrame:
-        return self.formatter(dfs)
+    def _format_dfs(self, df: pd.DataFrame) -> pd.DataFrame:
+        return self.formatter(df)
     
-    def _plot_dfs(self, dfs: pd.DataFrame) -> None:
-        return self.plotter(dfs, self.base_filepath)
+    def _plot_dfs(self, df: pd.DataFrame) -> None:
+        base_filepath = f"./data/plots/{self.organism}/{self.algorithm}"
+        return self.plotter(df, base_filepath)
     
-    #def _report_dfs(self, dfs: pd.DataFrame) -> None:
-    #    return self.reporter(dfs)
+    def _report_dfs(self, df: pd.DataFrame) -> None:
+        base_filepath = f"./data/reports/{self.organism}/{self.algorithm}"
+        return self.reporter(df, base_filepath)
 
     def run(self, fasta_filepath: str, predictions_filepath: str) -> None:
-        """Full analysis pipeline."""
         df = self._initialize_df(fasta_filepath, predictions_filepath)
         df = self._transform_df(df)
         df = self._format_dfs(df)
         self._plot_dfs(df)
-        #self._report_dfs(dfs)
-
-        #Print for testing, remove later:
-        #print(chi2_proteins_motifs(dfs))
-        #
+        self._report_dfs(df)

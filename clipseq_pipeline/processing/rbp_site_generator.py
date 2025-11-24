@@ -8,11 +8,16 @@ author: U.B.
 '''
 
 from collections.abc import Iterator
+import os
+from typing import Callable
 
 from ..constants import RBP_NT_LENGTH
 from .clip_processing import ClipEntry, ClipProcessor
 from .genome_processor import GenomeProcessor
 from .gff3_processor import Gff3Processor
+from .sequence_shuffler import di_nt_preserve_shuffler
+
+type SequenceFn = Callable[[ClipEntry], str]
     
 class RbpSiteGenerator:
     '''
@@ -45,15 +50,45 @@ class RbpSiteGenerator:
         self.genome = GenomeProcessor(f"data/datasets/{self.organism}/{self.organism}_genome.fa")
         self.gff3_index = Gff3Processor(f"data/datasets/{self.organism}/{self.organism}_annotations.gff3")
 
+    def _write_fasta_file(self, filename: str, sequence_func: SequenceFn) -> None:
+        """
+        Writes CLIP entries to a FASTA file using the provided sequence function.
+
+        Parameters
+        ----------
+        filename: str
+            Name of the output FASTA file.
+        sequence_func: SequenceFn
+            Function that takes a clip and returns a string
+            representation for the FASTA file.
+        """
+        output_dir = f"./data/fasta_files/{self.organism}"
+        os.makedirs(output_dir, exist_ok=True)
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, "w") as file:
+            for clip_counter, clip in enumerate(self._iterate_rbpsites(), start=1):
+                clip.clip_id = f"{self.organism}:{clip_counter}"
+                file.write(sequence_func(clip))
+
     def write_fasta(self) -> None:
         '''
         Assigns an ID to the CLIP entries and writes them into a FASTA file.
         '''
-        with open(f"./data/fasta_files/{self.organism}_rbp_sites.fasta", "w") as file:
-            for clip_counter, clip in enumerate(self._iterate_rbpsites(), start=1):
-                clip.clip_id = f"{self.organism}:{clip_counter}"
-                clip_string = clip.to_fasta()
-                file.write(clip_string)
+        self._write_fasta_file(
+            f"{self.organism}_rbp_sites.fasta",
+            lambda clip: clip.to_fasta()
+        )
+
+    def write_shuffled_fasta(self) -> None:
+        '''
+        Assigns an ID to the CLIP entries and writes them with their
+        dinucleotide shuffled sequence into a FASTA file.
+        '''
+        self._write_fasta_file(
+            f"{self.organism}_shuffled_rbp_sites.fasta",
+            lambda clip: clip.to_shuffled_fasta()
+        )
 
     def _iterate_rbpsites(self) -> Iterator[ClipEntry]:
         '''
@@ -108,6 +143,8 @@ class RbpSiteGenerator:
         """
         Checks if a CLIP entry has a sequence and assigns it to the entry.
         Also assigns the sequence start and end to the CLIP entry.
+        And creates a dinucelotide preserving shuffle and a mononucleotide
+        shuffle of the sequence.
 
         Parameters
         ----------
@@ -126,11 +163,13 @@ class RbpSiteGenerator:
         seq_start, seq_end = self._compute_extended_coordinates(clip, desired_length)
         seq_start, seq_end = self._adjust_for_chromosome_bounds(clip.chromosome, seq_start, seq_end, desired_length)
         sequence = self._fetch_sequence(clip, seq_start, seq_end)
+        shuffled_sequence = di_nt_preserve_shuffler(sequence)
         
         if (seq_end - seq_start) < desired_length:
             return False
         else:
             clip.sequence_start, clip.sequence_end, clip.sequence = seq_start, seq_end, sequence
+            clip.shuffled_sequence = shuffled_sequence
             return bool(sequence)
     
     def _compute_extended_coordinates(self, clip: ClipEntry, desired_length: int) -> tuple[int, int]:

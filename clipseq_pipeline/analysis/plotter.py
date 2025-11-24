@@ -8,8 +8,6 @@ from matplotlib.ticker import FixedLocator
 import pandas as pd
 import seaborn as sns
 
-from .formatter import FormattedRbpDf
-
 type PlotFn = Callable[[pd.DataFrame], None]
 
 @dataclass
@@ -91,33 +89,40 @@ class Histogram(PlotStrategy):
     def plot(self, df: pd.DataFrame, filepath: str):
         raise NotImplementedError("Histogram Class and plot method are not implemented yet.")
 
-
+# TODO: Refactor code.
 def apply_plotters(
-    formatted_dfs: list[FormattedRbpDf],
-    plotter: dict[str, RnaPlotter],
+    formatted_df: pd.DataFrame,
+    plotters: dict[str, RnaPlotter],
     base_filepath: str
 ) -> None:
-    for formatted in formatted_dfs:
-        if formatted.format_name in plotter:
-            plotter[formatted.format_name].plot_fn(
-                formatted.df, 
-                (
-                    f"{base_filepath}/{formatted.rbp_name}/"
-                    f"{formatted.format_name}/{plotter[formatted.format_name].plot_name}.png"
-                )
-            )
+    for (format_name, filter_name, rbp_name), row in formatted_df.iterrows():
+        if format_name not in plotters:
+            continue
+
+        plotter = plotters[format_name]
+        plot_fn = plotter.plot_fn
+
+        df: pd.DataFrame = row["data"]
+        if df.empty:
+            continue
+
+        output_dir = os.path.join(base_filepath, filter_name, rbp_name)
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f"{format_name}_{plotter.plot_name}.png")
+
+        plot_fn(df, output_path)
 
 RNAMOTIFOLD_PLOTS = {
     "motif_frequency": RnaPlotter("barplot", Barplot().plot),
     "motif_distances": RnaPlotter("violinplot", Violinplot().plot)
 }
 
-def plot_motifold_dfs(formatted_dfs: list[FormattedRbpDf], base_filepath: str) -> None:
-    return apply_plotters(formatted_dfs, RNAMOTIFOLD_PLOTS, base_filepath)
+def plot_motifold_df(formatted_df: pd.DataFrame, base_filepath: str) -> None:
+    return apply_plotters(formatted_df, RNAMOTIFOLD_PLOTS, base_filepath)
 
 RNAMOTICES_PLOTS = {
     "potential_motifs": RnaPlotter("hisotogram", Histogram().plot)
 }
 
-def plot_motices_dfs(formatted_dfs: list[FormattedRbpDf], base_filepath: str) -> None:
-    return apply_plotters(formatted_dfs, RNAMOTICES_PLOTS, base_filepath)
+def plot_motices_df(formatted_df: pd.DataFrame, base_filepath: str) -> None:
+    return apply_plotters(formatted_df, RNAMOTICES_PLOTS, base_filepath)

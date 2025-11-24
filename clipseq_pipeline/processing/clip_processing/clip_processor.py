@@ -106,4 +106,5 @@ class ClipProcessor:
                 sequence="",
                 sequence_start=None,
                 sequence_end=None,
+                shuffled_sequence=""
             )

@@ -3,9 +3,9 @@ ORGANISMS_TO_EXAMINE = {
     #"Arabidopsis thaliana": "arabidopsis_thaliana",
     #"Caenorhabditis elegans": "caenorhabditis_elegans",
     #"Danio rerio": "danio_rerio",
-    #"Drosophila melanogaster": "drosophila_melanogaster",
+    "Drosophila melanogaster": "drosophila_melanogaster",
     #"Homo sapiens": "homo_sapiens",
-    "Mus musculus": "mus_musculus",
+    #"Mus musculus": "mus_musculus",
     #"Saccharomyces cerevisiae": "saccharomyces_cerevisiae"
 }
 

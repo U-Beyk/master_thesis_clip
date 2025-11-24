@@ -1,23 +1,25 @@
 from .initializer import init_motifold_df, init_motices_df
-from .transformer import trans_motifold_dfs, trans_motices_dfs
-from .formatter import format_motifold_dfs, format_motices_dfs
-from .plotter import plot_motifold_dfs
+from .transformer import trans_motifold_df, trans_motices_df
+from .formatter import format_motifold_df, format_motices_df
+from .plotter import plot_motifold_df
+from .reporter import report_motifold_df
 
 #
 from.analyser import AnalysisPipeline
 
 def run_analysis():
     analyser = AnalysisPipeline(
-        "mus_musculus",
+        "drosophila_melanogaster",
         "rnamotifold",
         init_motifold_df, 
-        trans_motifold_dfs,
-        format_motifold_dfs,
-        plot_motifold_dfs
+        trans_motifold_df,
+        format_motifold_df,
+        plot_motifold_df,
+        report_motifold_df
     )
     analyser.run(
-        "./data/fasta_files/mus_musculus_rbp_sites.fasta",
-        "./data/rna_predictions/mus_musculus_prediction.csv"
+        "./data/fasta_files/drosophila_melanogaster_mono_nt_shuffled_rbp_sites.fasta",
+        "./data/rna_predictions/drosophila_melanogaster_mono_nt_shuffled_prediction.csv"
     )
     #df = init_motifold_df(
     #    "./data/fasta_files/danio_rerio_rbp_sites.fasta",

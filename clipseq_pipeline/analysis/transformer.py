@@ -53,7 +53,7 @@ def apply_pipeline(df: pd.DataFrame, pipeline: list[FilterFn]) -> pd.DataFrame:
     return df
 
 # TODO: Refactor code.
-def apply_rna_filters_multiindex(df: pd.DataFrame, filters: list[RnaFilter]) -> pd.DataFrame:
+def apply_rna_filters(df: pd.DataFrame, filters: list[RnaFilter]) -> pd.DataFrame:
     """
     Apply RNA filters to the RBP DataFrames and return a MultiIndex DataFrame.
     
@@ -96,13 +96,13 @@ RNAMOTIFOLD_FILTERS: list[RnaFilter] = [
     RnaFilter("mirna_mfe_below0", [filter_mfe_below_zero, filter_by_mirna])
 ]
 
-def trans_motifold_dfs(df: pd.DataFrame) -> pd.DataFrame:
-    return apply_rna_filters_multiindex(df, RNAMOTIFOLD_FILTERS)
+def trans_motifold_df(df: pd.DataFrame) -> pd.DataFrame:
+    return apply_rna_filters(df, RNAMOTIFOLD_FILTERS)
 
 RNAMOTICES_FILTERS: list[RnaFilter] = [
     # TODO: Add filters.
 ]
 
 # TODO: Implement method.
-def trans_motices_dfs(df:pd.DataFrame) -> pd.DataFrame:
+def trans_motices_df(df:pd.DataFrame) -> pd.DataFrame:
     raise NotImplementedError("trans_motices_dfs method is not implemented yet.")

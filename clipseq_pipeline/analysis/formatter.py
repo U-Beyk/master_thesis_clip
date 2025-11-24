@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from typing import Callable
 
@@ -128,13 +128,13 @@ RNAMOTIFOLD_FORMATS: list[RnaFormatter] = [
     RnaFormatter("motif_distances", [MotifDistanceFormatter().format]),
 ]
 
-def format_motifold_dfs(filtered_dfs: pd.DataFrame) -> pd.DataFrame:
-    return apply_formatters(filtered_dfs, RNAMOTIFOLD_FORMATS)
+def format_motifold_df(filtered_df: pd.DataFrame) -> pd.DataFrame:
+    return apply_formatters(filtered_df, RNAMOTIFOLD_FORMATS)
 
 
 RNAMOTICES_FORMATS: list[RnaFormatter] = [
     RnaFormatter("potential_motifs", [PotentialMotifFormatter().format])
 ]
 
-def format_motices_dfs(filtered_dfs: pd.DataFrame) -> pd.DataFrame:
-    return apply_formatters(filtered_dfs, RNAMOTICES_FORMATS)
+def format_motices_df(filtered_df: pd.DataFrame) -> pd.DataFrame:
+    return apply_formatters(filtered_df, RNAMOTICES_FORMATS)

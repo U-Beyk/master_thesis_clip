@@ -31,8 +31,9 @@ class FastaBuilder:
     @staticmethod
     def _process_organism(organism: str) -> None:
         '''
-        Creates a RbpSiteGenerator instance of the specified organism and writes a FASTA file
-        of the CLIP data and its sequences.
+        Creates a RbpSiteGenerator instance of the specified organism and writes three FASTA files.
+        One with the original sequence, one with the sequence shuffled preserving the mononucleotides
+        and the third one also shuffled preserving the dinucleotides.
 
         Parameters
         ----------
@@ -41,6 +42,7 @@ class FastaBuilder:
         '''
         rbpsite_generator = RbpSiteGenerator(organism)
         rbpsite_generator.write_fasta()
+        rbpsite_generator.write_shuffled_fasta()
 
     def build_fasta_organisms(self) -> None:
         '''
