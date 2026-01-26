@@ -5,13 +5,6 @@ from typing import Callable
 
 import pandas as pd
 
-type FormatFn = Callable[[pd.DataFrame], pd.DataFrame]
-
-@dataclass(frozen=True)
-class RnaFormatter:
-    name: str
-    pipeline: list[FormatFn]
-
 class DataFormatterStrategy(ABC):
     @abstractmethod
     def format(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -84,9 +77,14 @@ class MotifDistanceFormatter(DataFormatterStrategy):
 
 # TODO: Implement class.
 class PotentialMotifFormatter(DataFormatterStrategy):
-    def format(df: pd.DataFrame) -> pd.DataFrame:
+    def format(self, df: pd.DataFrame) -> pd.DataFrame:
         raise NotImplementedError("PotentialMotifFormatter Class and format method are not implemented yet.")
     
+@dataclass(frozen=True)
+class RnaFormatter:
+    name: str
+    pipeline: list[DataFormatterStrategy]
+
 # TODO: Refactor code.
 def apply_formatters(
         filtered_dfs: pd.DataFrame,
@@ -105,8 +103,8 @@ def apply_formatters(
     for (filter_name, rbp_name), group_df in grouped:
         for formatter in formatters:
             df = group_df.copy()
-            for fn in formatter.pipeline:
-                df = fn(df)
+            for cls in formatter.pipeline:
+                df = cls.format(df)
             if df.empty:
                 continue
             records.append((formatter.name, filter_name, rbp_name, df))
@@ -124,8 +122,8 @@ def apply_formatters(
 
 
 RNAMOTIFOLD_FORMATS: list[RnaFormatter] = [
-    RnaFormatter("motif_frequency", [MotifFrequencyFormatter().format]),
-    RnaFormatter("motif_distances", [MotifDistanceFormatter().format]),
+    RnaFormatter("motif_frequency", [MotifFrequencyFormatter()]),
+    RnaFormatter("motif_distances", [MotifDistanceFormatter()]),
 ]
 
 def format_motifold_df(filtered_df: pd.DataFrame) -> pd.DataFrame:
@@ -133,7 +131,7 @@ def format_motifold_df(filtered_df: pd.DataFrame) -> pd.DataFrame:
 
 
 RNAMOTICES_FORMATS: list[RnaFormatter] = [
-    RnaFormatter("potential_motifs", [PotentialMotifFormatter().format])
+    RnaFormatter("potential_motifs", [PotentialMotifFormatter()])
 ]
 
 def format_motices_df(filtered_df: pd.DataFrame) -> pd.DataFrame:

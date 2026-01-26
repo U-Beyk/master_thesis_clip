@@ -11,7 +11,7 @@ author: U.B.
 from collections import defaultdict
 from collections.abc import Iterator
 
-from ...constants import CLIP_NT_LENGTH, HIGH_CONFIDENCE_SCORER
+from ...constants import CLIP_NT_LENGTH, HIGH_CONFIDENCE_SCORER, CLIP_SCORE_CUTOFF
 from .clip_entry import ClipEntry
 
 
@@ -102,7 +102,7 @@ class ClipFilter:
 
     def _calculate_cutoff(self, scores: list[float], software: str) -> float:
         '''
-        Compute 10% cutoff for given score list and software.
+        Compute cutoff for given score list and software.
 
         Parameters
         ----------
@@ -117,12 +117,12 @@ class ClipFilter:
             Calculated value for the cutoff of the corresponding software.
         '''
         scores.sort(reverse=True)
-        index = max(1, int(len(scores) * 0.1)) - 1
+        index = max(1, int(len(scores) * CLIP_SCORE_CUTOFF)) - 1
         if software in self._high_confidence_scorer:
-            # Use top 10% cutoff
+            # Use top percentage cutoff
             return scores[index]
         else:
-            # Use bottom 10% cutoff
+            # Use bottom percentage cutoff
             # NOTE: scores[-idx] is wrong when idx=0, as -0 == 0 (top score), not bottom
             return scores[-(index + 1)]
 

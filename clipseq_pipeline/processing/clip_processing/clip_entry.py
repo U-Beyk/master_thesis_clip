@@ -134,6 +134,7 @@ class ClipEntry:
             f"|rbp_name:{self.rbp_name}"
             f"|seq_range:{self.sequence_start}-{self.sequence_end}"
             f"|features:{features}"
+            f"|software:{self.software}"
         )
 
     def to_fasta(self) -> str:

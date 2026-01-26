@@ -6,7 +6,8 @@ type DataFrameInitializer = Callable[[str, str], pd.DataFrame]
 type DataFrameTransformer = Callable[[pd.DataFrame], pd.DataFrame]
 type DataFrameFormatter = Callable[[pd.DataFrame], pd.DataFrame]
 type DataFramePlotter= Callable[[pd.DataFrame, str], None]
-type DataFrameReporter = Callable[[pd.DataFrame], None]
+type DataFrameReporter = Callable[[pd.DataFrame, pd.DataFrame], None]
+type ReportInspector = Callable[[str, str], None]
 
 class AnalysisPipeline:
     def __init__(
@@ -17,7 +18,8 @@ class AnalysisPipeline:
         transformer: DataFrameTransformer,
         formatter: DataFrameFormatter,
         plotter: DataFramePlotter,
-        reporter: DataFrameReporter
+        reporter: DataFrameReporter,
+        inspector: ReportInspector
     ):
         self.organism = organism
         self.algorithm = algorithm
@@ -26,32 +28,61 @@ class AnalysisPipeline:
         self.formatter = formatter
         self.plotter = plotter
         self.reporter = reporter
+        self.inspector = inspector
 
-    # TODO: Fix method.
+    @property
+    def fasta_original_path(self) -> str:
+        return f"./data/fasta_files/{self.organism}/{self.organism}_rbp_sites.fasta"
+    
+    @property
+    def predictions_original_path(self) -> str:
+        return f"./data/rna_predictions/{self.organism}/{self.organism}_prediction.csv"
+    
+    @property
+    def fasta_shuffled_path(self) -> str:
+        return f"./data/fasta_files/{self.organism}/{self.organism}_shuffled_rbp_sites.fasta"
+    
+    @property
+    def predictions_shuffled_path(self) -> str:
+        return f"./data/rna_predictions/{self.organism}/{self.organism}_shuffled_prediction.csv"
+    
+    @property
+    def plot_directory(self) -> str:
+        return f"./data/plots/{self.organism}/{self.algorithm}"
+    
+    @property
+    def report_directory(self) -> str:
+        return f"./data/reports/{self.organism}/{self.algorithm}"
+
     def _initialize_df(self, fasta_filepath: str, predictions_filepath: str) -> pd.DataFrame:
-        fasta_original = f"./data/fasta_files/{self.organism}/{self.organism}_rbp_sites.fasta"
-        predictions_original = f"./data/rna_predictions/{self.organism}/{self.organism}_prediction.csv"
-        fasta_shuffled = f"./data/fasta_files/{self.organism}/{self.organism}_shuffled_rbp_sites.fasta"
-        predictions_shuffled = f"./data/rna_predictions/{self.organism}/{self.organism}_shuffled_prediction.csv"
         return self.initializer(fasta_filepath, predictions_filepath)
 
     def _transform_df(self, df: pd.DataFrame) -> pd.DataFrame:
         return self.transformer(df)
     
-    def _format_dfs(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _format_df(self, df: pd.DataFrame) -> pd.DataFrame:
         return self.formatter(df)
     
     def _plot_dfs(self, df: pd.DataFrame) -> None:
-        base_filepath = f"./data/plots/{self.organism}/{self.algorithm}"
-        return self.plotter(df, base_filepath)
+        return self.plotter(df, self.plot_directory)
     
-    def _report_dfs(self, df: pd.DataFrame) -> None:
-        base_filepath = f"./data/reports/{self.organism}/{self.algorithm}"
-        return self.reporter(df, base_filepath)
+    def _report_dfs(self, df: pd.DataFrame, df_null: pd.DataFrame) -> None:
+        return self.reporter(df, df_null, self.report_directory)
+    
+    def _inspect_report(self) -> None:
+        return self.inspector(self.organism, self.report_directory)
 
-    def run(self, fasta_filepath: str, predictions_filepath: str) -> None:
-        df = self._initialize_df(fasta_filepath, predictions_filepath)
+    def run(self) -> None:
+        df = self._initialize_df(self.fasta_original_path, self.predictions_original_path)
+        df_null = self._initialize_df(self.fasta_shuffled_path, self.predictions_shuffled_path)
+
         df = self._transform_df(df)
-        df = self._format_dfs(df)
+        df_null = self._transform_df(df_null)
+
+        df = self._format_df(df)
+        df_null = self._format_df(df_null)
+
+        self._report_dfs(df, df_null)
+        self._inspect_report()
+
         self._plot_dfs(df)
-        self._report_dfs(df)

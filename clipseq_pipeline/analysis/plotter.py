@@ -8,13 +8,6 @@ from matplotlib.ticker import FixedLocator
 import pandas as pd
 import seaborn as sns
 
-type PlotFn = Callable[[pd.DataFrame], None]
-
-@dataclass
-class RnaPlotter:
-    plot_name: str
-    plot_fn: PlotFn
-
 class PlotStrategy(ABC):
     """Abstract base class for plot strategies."""
 
@@ -34,7 +27,7 @@ class Barplot(PlotStrategy):
     """Concrete strategy for generating bar plots."""
 
     def plot(self, df: pd.DataFrame, filepath: str) -> None:
-        fig, ax = plt.subplots(figsize=(8, 5))
+        _, ax = plt.subplots(figsize=(8, 5))
         sns.barplot(data=df, x="Motifs", y="Count")
         self._add_category_numbers(df, ax)
         self._save_plot(filepath)
@@ -51,7 +44,7 @@ class Violinplot(PlotStrategy):
     """Concrete strategy for generating violin plots."""
 
     def plot(self, df: pd.DataFrame, filepath: str) -> None:
-        fig, ax = plt.subplots(figsize=(8, 5))
+        _, ax = plt.subplots(figsize=(8, 5))
         self._draw_violinplot(df, ax)
         self._format_axes(df, ax)
         self._save_plot(filepath)
@@ -89,6 +82,11 @@ class Histogram(PlotStrategy):
     def plot(self, df: pd.DataFrame, filepath: str):
         raise NotImplementedError("Histogram Class and plot method are not implemented yet.")
 
+@dataclass
+class RnaPlotter:
+    plot_name: str
+    plot_cls: PlotStrategy
+
 # TODO: Refactor code.
 def apply_plotters(
     formatted_df: pd.DataFrame,
@@ -100,7 +98,7 @@ def apply_plotters(
             continue
 
         plotter = plotters[format_name]
-        plot_fn = plotter.plot_fn
+        plot_cls = plotter.plot_cls
 
         df: pd.DataFrame = row["data"]
         if df.empty:
@@ -110,18 +108,18 @@ def apply_plotters(
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{format_name}_{plotter.plot_name}.png")
 
-        plot_fn(df, output_path)
+        plot_cls.plot(df, output_path)
 
 RNAMOTIFOLD_PLOTS = {
-    "motif_frequency": RnaPlotter("barplot", Barplot().plot),
-    "motif_distances": RnaPlotter("violinplot", Violinplot().plot)
+    "motif_frequency": RnaPlotter("barplot", Barplot()),
+    "motif_distances": RnaPlotter("violinplot", Violinplot())
 }
 
 def plot_motifold_df(formatted_df: pd.DataFrame, base_filepath: str) -> None:
     return apply_plotters(formatted_df, RNAMOTIFOLD_PLOTS, base_filepath)
 
 RNAMOTICES_PLOTS = {
-    "potential_motifs": RnaPlotter("hisotogram", Histogram().plot)
+    "potential_motifs": RnaPlotter("hisotogram", Histogram())
 }
 
 def plot_motices_df(formatted_df: pd.DataFrame, base_filepath: str) -> None:

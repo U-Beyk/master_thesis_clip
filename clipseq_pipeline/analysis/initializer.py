@@ -34,6 +34,7 @@ def parse_id_column(df: pd.DataFrame) -> pd.DataFrame:
         "rbp_name": 2,
         "seq_range": 3,
         "feature_types": 4,
+        "software": 5,
     }
     # Extracts each column
     for col_name, index in columns_map.items():
@@ -48,7 +49,7 @@ def parse_id_column(df: pd.DataFrame) -> pd.DataFrame:
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     new_cols = [
         "sequence_id", "clip_start", "clip_end","rbp_name", 
-        "sequence_start", "sequence_end", "feature_types"
+        "sequence_start", "sequence_end", "feature_types", "software"
     ]
     df = df[new_cols + [col for col in df.columns if col not in new_cols]]
     return df
