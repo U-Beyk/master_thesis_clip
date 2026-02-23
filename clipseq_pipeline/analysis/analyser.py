@@ -39,16 +39,20 @@ class AnalysisPipeline:
         return f"./data/rna_predictions/{self.organism}/{self.organism}_prediction.csv"
     
     @property
-    def fasta_shuffled_path(self) -> str:
-        return f"./data/fasta_files/{self.organism}/{self.organism}_shuffled_rbp_sites.fasta"
+    def fasta_random_path(self) -> str:
+        return f"./data/fasta_files/{self.organism}/{self.organism}_random_seq.fasta"
     
     @property
-    def predictions_shuffled_path(self) -> str:
-        return f"./data/rna_predictions/{self.organism}/{self.organism}_shuffled_prediction.csv"
+    def predictions_random_path(self) -> str:
+        return f"./data/rna_predictions/{self.organism}/{self.organism}_random_preds.csv"
     
     @property
-    def plot_directory(self) -> str:
+    def plot_directory_original(self) -> str:
         return f"./data/plots/{self.organism}/{self.algorithm}"
+    
+    @property
+    def plot_directory_shuffled(self) -> str:
+        return f"./data/plots/{self.organism}/nullmodel"
     
     @property
     def report_directory(self) -> str:
@@ -63,8 +67,8 @@ class AnalysisPipeline:
     def _format_df(self, df: pd.DataFrame) -> pd.DataFrame:
         return self.formatter(df)
     
-    def _plot_dfs(self, df: pd.DataFrame) -> None:
-        return self.plotter(df, self.plot_directory)
+    def _plot_dfs(self, df: pd.DataFrame, directory_path: str) -> None:
+        return self.plotter(df, directory_path)
     
     def _report_dfs(self, df: pd.DataFrame, df_null: pd.DataFrame) -> None:
         return self.reporter(df, df_null, self.report_directory)
@@ -74,7 +78,7 @@ class AnalysisPipeline:
 
     def run(self) -> None:
         df = self._initialize_df(self.fasta_original_path, self.predictions_original_path)
-        df_null = self._initialize_df(self.fasta_shuffled_path, self.predictions_shuffled_path)
+        df_null = self._initialize_df(self.fasta_random_path, self.predictions_random_path)
 
         df = self._transform_df(df)
         df_null = self._transform_df(df_null)
@@ -85,4 +89,5 @@ class AnalysisPipeline:
         self._report_dfs(df, df_null)
         self._inspect_report()
 
-        self._plot_dfs(df)
+        self._plot_dfs(df, self.plot_directory_original)
+        self._plot_dfs(df_null, self.plot_directory_shuffled)

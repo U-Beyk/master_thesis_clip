@@ -30,9 +30,11 @@ class RNAPredicter:
         Instantiates an RNAPredicter object.
         '''
         self.organisms: dict[str, str] = ORGANISMS_TO_EXAMINE
-        self.filename_types = {"rbp_sites": "prediction",
-                          "shuffled_rbp_sites": "shuffled_prediction",
-                        }
+        # NOTE: Add here the fastas that have to be predicted.
+        self.filename_types = {
+            "rbp_sites": "prediction",
+            "random_seq": "random_preds",
+        }
     
     @staticmethod
     def _predict_organism(organism: str, fasta_suffix: str, prediction_suffix: str) -> None:
@@ -52,7 +54,7 @@ class RNAPredicter:
         script_folder = "./RNAmotiFold"
         cmd = [
             "python3",
-            "RNAmotiFold.py",
+            "RNAmotiFold.py", "-f",
             "-i", f"../data/fasta_files/{organism}/{organism}_{fasta_suffix}.fasta",
             "-o", f"../data/rna_predictions/{organism}/{organism}_{prediction_suffix}.csv",
             "-k", f"{RNA_PREDICTION_K_VALUE}",

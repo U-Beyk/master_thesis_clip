@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 import json
+from math import sqrt
 import os
 
 import pandas as pd
@@ -51,23 +52,32 @@ class Chi2ProteinsMotifs(ReportStrategy):
     def report(self, df: pd.DataFrame) -> dict:
         chi2_results = self._chi2_test(df)
         return {
-            "description": "Chi-square test of independence across RBPs",
+            "description": "Chi-square test of independence across RBPs "
+                           "with Cramér's V effect size",
             "results": chi2_results
         }
 
     def _chi2_test(self, df: pd.DataFrame) -> dict[str, dict[str, float | int]]:
         motif_freq_rbp = self._pivot_motif_counts_by_rbp(df)
-        m = len(motif_freq_rbp)
         results = {}
-        for filter_, df in motif_freq_rbp.items():
-            matrix = df.values
-            chi2, p, dof, _ = chi2_contingency(matrix)
-            if chi2 == 0:
+        for filter_, sub_df in motif_freq_rbp.items():
+            matrix = sub_df.values
+            if matrix.size == 0:
                 continue
+            if min(matrix.shape) < 2:
+                continue
+            chi2, p, dof, _ = chi2_contingency(matrix)
+            n = matrix.sum()
+            if n == 0:
+                continue
+            k = min(matrix.shape)
+            cramers_v = sqrt(chi2 / (n * (k - 1))) if k > 1 else 0.0
             results[filter_] = {
                 "chi2": float(chi2),
                 "p_value": float(p),
                 "dof": int(dof),
+                "n": int(n),
+                "cramers_v": float(cramers_v),
             }
         return results
     

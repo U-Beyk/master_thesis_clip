@@ -133,6 +133,7 @@ class ClipEntry:
             f"|clip_range:{self.clip_start}-{self.clip_end}"
             f"|rbp_name:{self.rbp_name}"
             f"|seq_range:{self.sequence_start}-{self.sequence_end}"
+            f"|chr:{self.chromosome}"
             f"|features:{features}"
             f"|software:{self.software}"
         )

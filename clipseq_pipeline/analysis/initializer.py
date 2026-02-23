@@ -33,8 +33,9 @@ def parse_id_column(df: pd.DataFrame) -> pd.DataFrame:
         "clip_range": 1,
         "rbp_name": 2,
         "seq_range": 3,
-        "feature_types": 4,
-        "software": 5,
+        "chr": 4,
+        "feature_types": 5,
+        "software": 6,
     }
     # Extracts each column
     for col_name, index in columns_map.items():
@@ -43,7 +44,7 @@ def parse_id_column(df: pd.DataFrame) -> pd.DataFrame:
     df[["clip_start", "clip_end"]] = df["clip_range"].str.split("-", expand=True).astype(int)
     df[["sequence_start", "sequence_end"]] = df["seq_range"].str.split("-", expand=True).astype(int)
     # Drops the now redundant columns
-    df = df.drop(columns=["ID", "clip_range", "seq_range"])
+    df = df.drop(columns=["ID", "clip_range", "seq_range", "chr"])
     return df
 
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:

@@ -7,10 +7,13 @@ Contains the class to build FASTA files.
 author: U.B.
 '''
 
+# TODO: Integrate random sequence getter.
+
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from ..constants import ORGANISMS_TO_EXAMINE
+from ..constants import ORGANISMS_TO_EXAMINE, RBP_NT_LENGTH
 from .rbp_site_generator import RbpSiteGenerator
+from .sequence_randomizer import sample_random_sequences
 
 class FastaBuilder:
     '''
@@ -28,6 +31,7 @@ class FastaBuilder:
         '''
         self.organisms: dict[str, str] = ORGANISMS_TO_EXAMINE
 
+    # TODO: Refactor documentation.
     @staticmethod
     def _process_organism(organism: str) -> None:
         '''
@@ -43,6 +47,14 @@ class FastaBuilder:
         rbpsite_generator = RbpSiteGenerator(organism)
         rbpsite_generator.write_fasta()
         rbpsite_generator.write_shuffled_fasta()
+        sample_random_sequences(
+            genome_fasta=f"./data/datasets/{organism}/{organism}_genome.fa",
+            reference_fasta=f"./data/fasta_files/{organism}/{organism}_rbp_sites.fasta",
+            gff3_file=f"./data/datasets/{organism}/{organism}_annotations.gff3",
+            seq_length=RBP_NT_LENGTH,
+            output_fasta=f"./data/fasta_files/{organism}/{organism}_random_seq.fasta",
+            seed=96
+        )
 
     def build_fasta_organisms(self) -> None:
         '''
