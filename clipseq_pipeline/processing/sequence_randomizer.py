@@ -11,6 +11,7 @@ Random genome sequence sampler with:
 
 import random
 from collections import defaultdict
+
 from pyfaidx import Fasta
 
 def parse_header_intervals(fasta_path: str):

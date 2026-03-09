@@ -7,8 +7,6 @@ Contains the class to build FASTA files.
 author: U.B.
 '''
 
-# TODO: Integrate random sequence getter.
-
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from ..constants import ORGANISMS_TO_EXAMINE, RBP_NT_LENGTH

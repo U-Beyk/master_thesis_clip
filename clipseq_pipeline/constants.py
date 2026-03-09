@@ -1,10 +1,10 @@
 # All organisms to include in the analysis of the CLIP-seq data, some of them csan be commented out, to test stuff
 ORGANISMS_TO_EXAMINE = {
-    "Arabidopsis thaliana": "arabidopsis_thaliana",
+    #"Arabidopsis thaliana": "arabidopsis_thaliana",
     #"Caenorhabditis elegans": "caenorhabditis_elegans",
     #"Danio rerio": "danio_rerio",
     #"Drosophila melanogaster": "drosophila_melanogaster",
-    #"Homo sapiens": "homo_sapiens",
+    "Homo sapiens": "homo_sapiens",
     #"Mus musculus": "mus_musculus",
     #"Saccharomyces cerevisiae": "saccharomyces_cerevisiae"
 }
