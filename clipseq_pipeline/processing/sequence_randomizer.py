@@ -13,11 +13,6 @@ import random
 from collections import defaultdict
 from pyfaidx import Fasta
 
-
-# -------------------------------------------------
-# Reference FASTA parsing
-# -------------------------------------------------
-
 def parse_header_intervals(fasta_path: str):
     """
     Parse genomic intervals from FASTA headers
@@ -54,11 +49,6 @@ def parse_header_intervals(fasta_path: str):
 
     return intervals, headers
 
-
-# -------------------------------------------------
-# GFF3 parsing (gene restriction)
-# -------------------------------------------------
-
 def parse_gff3_genes(gff3_path: str):
     """
     Parse GFF3 and return intervals where
@@ -89,11 +79,6 @@ def parse_gff3_genes(gff3_path: str):
             gene_intervals[chrom].append((start, end))
 
     return gene_intervals
-
-
-# -------------------------------------------------
-# Interval utilities
-# -------------------------------------------------
 
 def merge_intervals(intervals):
     merged = {}
@@ -147,11 +132,6 @@ def contained_in(intervals, chrom, start, end):
 
     return False
 
-
-# -------------------------------------------------
-# Genome handling
-# -------------------------------------------------
-
 def load_genome(genome_fasta):
     return Fasta(
         genome_fasta,
@@ -162,11 +142,6 @@ def load_genome(genome_fasta):
 
 def get_chrom_sizes(genome):
     return {chrom: len(genome[chrom]) for chrom in genome.keys()}
-
-
-# -------------------------------------------------
-# Main function
-# -------------------------------------------------
 
 def sample_random_sequences(
     genome_fasta: str,

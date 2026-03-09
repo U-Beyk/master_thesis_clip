@@ -6,7 +6,7 @@ type DataFrameInitializer = Callable[[str, str], pd.DataFrame]
 type DataFrameTransformer = Callable[[pd.DataFrame], pd.DataFrame]
 type DataFrameFormatter = Callable[[pd.DataFrame], pd.DataFrame]
 type DataFramePlotter= Callable[[pd.DataFrame, str], None]
-type DataFrameReporter = Callable[[pd.DataFrame, pd.DataFrame], None]
+type DataFrameReporter = Callable[[pd.DataFrame, pd.DataFrame, str, str], None]
 type ReportInspector = Callable[[str, str], None]
 
 class AnalysisPipeline:
@@ -58,6 +58,10 @@ class AnalysisPipeline:
     def report_directory(self) -> str:
         return f"./data/reports/{self.organism}/{self.algorithm}"
 
+    @property
+    def heatmap_path(self) -> str:
+        return f"./data/plots/{self.organism}/heatmaps"
+
     def _initialize_df(self, fasta_filepath: str, predictions_filepath: str) -> pd.DataFrame:
         return self.initializer(fasta_filepath, predictions_filepath)
 
@@ -71,7 +75,7 @@ class AnalysisPipeline:
         return self.plotter(df, directory_path)
     
     def _report_dfs(self, df: pd.DataFrame, df_null: pd.DataFrame) -> None:
-        return self.reporter(df, df_null, self.report_directory)
+        return self.reporter(df, df_null, self.heatmap_path, self.report_directory)
     
     def _inspect_report(self) -> None:
         return self.inspector(self.organism, self.report_directory)

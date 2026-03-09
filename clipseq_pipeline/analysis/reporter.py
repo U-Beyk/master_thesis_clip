@@ -4,8 +4,12 @@ from enum import Enum
 import json
 from math import sqrt
 import os
+import textwrap
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
 from scipy.stats import chi2_contingency, chisquare
 
 class ReportStrategy(ABC):
@@ -81,7 +85,6 @@ class Chi2ProteinsMotifs(ReportStrategy):
             }
         return results
     
-# TODO: Add Bonferroni correction AND test it.
 class Chi2ProteinsNullComparison(ReportStrategy):
     # p<0.05 distributions are different
     '''
@@ -91,11 +94,13 @@ class Chi2ProteinsNullComparison(ReportStrategy):
 
     Dfs richtig formatieren.
     '''
-    def report(self, df: pd.DataFrame, df_null: pd.DataFrame) -> str:
+    def report(self, df: pd.DataFrame, df_null: pd.DataFrame, heatmap_path: str) -> str:
         chi2_results = self._chi2_test(df, df_null)
+        self._save_residual_heatmap(df, df_null, heatmap_path)
+
         return {
             "description": "Chi-square test comparing RBP motif distributions to null distributions",
-            "results": chi2_results
+            "results": chi2_results,
         }
 
     def _chi2_test(self, df: pd.DataFrame, df_null: pd.DataFrame) -> dict[str, dict[str, dict[str, float]]]:
@@ -180,6 +185,71 @@ class Chi2ProteinsNullComparison(ReportStrategy):
             }
         return corrected
 
+    def _save_residual_heatmap(
+        self,
+        df: pd.DataFrame,
+        df_null: pd.DataFrame,
+        filepath: str
+    ):
+
+        filter_dfs = self._pivot_motif_counts_by_rbp(df)
+        filter_null_dfs = self._pivot_motif_counts_by_rbp(df_null)
+
+        for filter_name, obs_df in filter_dfs.items():
+
+            null_df = filter_null_dfs.get(filter_name)
+            if null_df is None:
+                continue
+
+            # Align motifs
+            all_motifs = obs_df.index.union(null_df.index)
+            obs_df = obs_df.reindex(all_motifs).fillna(0)
+            null_df = null_df.reindex(all_motifs).fillna(0)
+
+            # Scale expected counts to observed totals
+            expected = null_df * (obs_df.values.sum() / null_df.values.sum())
+
+            # Standardized residuals
+            residuals = (obs_df - expected) / np.sqrt(expected)
+
+            residuals = residuals.replace([np.inf, -np.inf], np.nan).fillna(0)
+
+            cell_size = 0.4
+            base_margin = 2.0
+
+            calc_width = max(12, residuals.shape[1] * cell_size + base_margin)
+            calc_height = residuals.shape[0] * cell_size + base_margin
+
+            plt.figure(figsize=(calc_width, calc_height))
+
+            sns.heatmap(
+                residuals,
+                cmap="coolwarm",
+                center=0,
+                linewidths=0.5,
+                square=True
+            )
+
+            title = "\n".join(textwrap.wrap(
+                f"Chi-square Residuals Heatmap ({filter_name})",
+                width=60
+            ))
+
+            plt.title(title, pad=20)
+
+            plt.xlabel("Proteins")
+            plt.ylabel("Motifs")
+
+            plt.xticks(rotation=90)
+            plt.yticks(rotation=0)
+
+            os.makedirs(filepath, exist_ok=True)
+            save_path = f"{filepath}/{filter_name}.png"
+
+            plt.tight_layout()
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.close()
+
 
 class ReportModus(Enum):
     SINGLE = "single"
@@ -201,6 +271,7 @@ def apply_statistics(
     formatted_df: pd.DataFrame,
     null_model_df: pd.DataFrame,
     reporters: list[RnaReporter],
+    heatmap_path: str,
     filepath: str
 ) -> None:
     report_file = f"{filepath}/report.json"
@@ -213,7 +284,7 @@ def apply_statistics(
         elif report.report_modus == ReportModus.COMPARATIVE:
             if null_model_df.empty:
                 continue
-            report_content = report.report_cls.report(formatted_df, null_model_df)
+            report_content = report.report_cls.report(formatted_df, null_model_df, heatmap_path)
         json_output[report.report_name] = report_content
     write_report(json_output, report_file)
 
@@ -225,9 +296,10 @@ RNAMOTIFOLD_REPORTS: list[RnaReporter] = [
 def report_motifold_df(
         formatted_df: pd.DataFrame,
         null_model_df:pd.DataFrame,
+        heatmap_path: str,
         base_filepath: str
     ) -> None:
-    return apply_statistics(formatted_df, null_model_df, RNAMOTIFOLD_REPORTS, base_filepath)
+    return apply_statistics(formatted_df, null_model_df, RNAMOTIFOLD_REPORTS, heatmap_path, base_filepath)
 
 
 if __name__ == "__main__":

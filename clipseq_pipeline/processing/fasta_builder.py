@@ -53,7 +53,8 @@ class FastaBuilder:
             gff3_file=f"./data/datasets/{organism}/{organism}_annotations.gff3",
             seq_length=RBP_NT_LENGTH,
             output_fasta=f"./data/fasta_files/{organism}/{organism}_random_seq.fasta",
-            seed=96
+            seed=96,
+            max_attempts=100000000
         )
 
     def build_fasta_organisms(self) -> None:

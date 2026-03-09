@@ -65,9 +65,6 @@ def filter_by_piranha(df: pd.DataFrame) -> pd.DataFrame:
 def filter_by_pureclip(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["software"] == "PureCLIP"]
 
-def filter_by_eclip(df: pd.DataFrame) -> pd.DataFrame:
-    return df[df["software"] == "eCLIP"]
-
 
 def build_rbp_dfs(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     dict_dfs = {"all_data": df.copy()}
@@ -123,15 +120,24 @@ RNAMOTIFOLD_FILTERS: list[RnaFilter] = [
     RnaFilter("mfe_lower_decile", [filter_mfe_lower_decile]),
     RnaFilter("mrna_mfe_below0", [filter_mfe_below_zero, filter_by_mrna]),
     RnaFilter("lncrna_mfe_below0", [filter_mfe_below_zero, filter_by_lncrna]),
+    RnaFilter("lncrna_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_lncrna]),
     RnaFilter("rrna_mfe_below0", [filter_mfe_below_zero, filter_by_rrna]),
+    RnaFilter("rrna_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_rrna]),
     RnaFilter("snrna_mfe_below0", [filter_mfe_below_zero, filter_by_snrna]),
+    RnaFilter("snrna_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_snrna]),
     RnaFilter("trna_mfe_below0", [filter_mfe_below_zero, filter_by_trna]),
     RnaFilter("trna_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_trna]),
     RnaFilter("mirna_mfe_below0", [filter_mfe_below_zero, filter_by_mirna]),
-    RnaFilter("cims_mfe_below0", [filter_mfe_below_zero, filter_by_cims]),
-    RnaFilter("paralyzer_mfe_below0", [filter_mfe_below_zero, filter_by_paralyzer]),
-    RnaFilter("piranha_mfe_below0", [filter_mfe_below_zero, filter_by_piranha]),
-    RnaFilter("pureclip_mfe_below0", [filter_mfe_below_zero, filter_by_pureclip])
+    RnaFilter("mirna_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_mirna]),
+    RnaFilter("cims_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_cims]),
+    RnaFilter("paralyzer_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_paralyzer]),
+    RnaFilter("piranha_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_piranha]),
+    RnaFilter("pureclip_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_pureclip]),
+    RnaFilter("clipper_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_clipper]),
+    RnaFilter("ctk_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_ctk]),
+    RnaFilter("eclip_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_eclip]),
+    RnaFilter("miclip_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_miclip]),
+    RnaFilter("pipseq_mfe_lower_decile", [filter_mfe_lower_decile, filter_by_pipseq]),
 ]
 
 def trans_motifold_df(df: pd.DataFrame) -> pd.DataFrame:
