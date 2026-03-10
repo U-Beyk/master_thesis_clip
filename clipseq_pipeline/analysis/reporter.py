@@ -115,6 +115,9 @@ class Chi2ProteinsNullComparison(ReportStrategy):
                 results[filter_] = dict()
             pvalues = {}
             for rbp in filter_df.columns:
+                if rbp not in rbp_null_dfs.columns:
+                    print(f"Missing protein + filter: {filter_}; {rbp}")
+                    continue # NOTE: Skips RBP if not in nullmodel.
                 rbp_df = filter_df[[rbp]]
                 rbp_null_df = rbp_null_dfs[[rbp_df.columns[0]]]
                 rbp_df, rbp_null_df = self._align_on_motifs(rbp_df, rbp_null_df)
